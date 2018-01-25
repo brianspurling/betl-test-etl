@@ -1,0 +1,20 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+
+[packages]
+
+"515b207" = {path = "../betl", editable = true}
+gspread = "*"
+"oauth2client" = "*"
+"psycopg2" = "*"
+sqlalchemy = "*"
+pandas = "*"
+django = "*"
+
+
+[dev-packages]
+
