@@ -6,10 +6,7 @@ import pandas as pd
 
 
 #
-# Not much to do here, because we assume that the companies table is
-# a definitive source of all companies.
-# To do: check this as we go though, by looking up all company names from
-# other tables in this master list
+#
 #
 def getAllCompanies():
     funcName = 'getAllCompanies'
@@ -42,7 +39,7 @@ def getAllCompanies():
     #
     # Write to ods data layer
     #
-    # to do: if betl.isBulkOrDelta() == 'BULK':
+    # to do #23
     eng = betl.getEtlDBEng()
     df_c.to_sql('ods_companies', eng,
                 if_exists='replace',
@@ -146,7 +143,7 @@ def getAllPeople():
     #
     # Write to ods data layer
     #
-    # to do: if betl.isBulkOrDelta() == 'BULK':
+    # to do #23
     eng = betl.getEtlDBEng()
     df_p.to_sql('ods_people', eng,
                 if_exists='replace',
@@ -292,7 +289,7 @@ def getAllAddresses():
     #
     # Write to ODS data layer
     #
-    # to do: if betl.isBulkOrDelta() == 'BULK':
+    # to do #23
     eng = betl.getEtlDBEng()
     df_a.to_sql('ods_addresses', eng,
                 if_exists='replace',
@@ -479,15 +476,7 @@ def prepareDMNode():
     del [df_p, df_c]
     logStr += betl.describeDF(funcName, a, df_n, 11)
 
-    # TO DO
-    # 1) search names, current system has:
-    #     name_ts_q (tsquery)
-    #     name_transformed
-    #     name_for_search     -- do I need both of these? Let's tidy this up
-    # 2) Mentions
-    #     - is_mentioned_in_docs
-    #     - mention count
-
+    # to do #24
     #
     # Write to temp file
     #

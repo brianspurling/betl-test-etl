@@ -5,7 +5,6 @@ import df_extract
 
 import sys
 
-
 betl.processArgs(sys.argv)
 
 # Configure betl
