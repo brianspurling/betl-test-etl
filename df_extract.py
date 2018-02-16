@@ -23,6 +23,9 @@ def extractPosts():
         df = pd.read_csv(filepath_or_buffer=fullFilePath,
                          sep=conn.files[tableName]['delimiter'],
                          quotechar=conn.files[tableName]['quotechar'])
+
+        betl.setAuditCols(df, 'WP', 'BULK')
+
         logStr += betl.describeDF(funcName, a, df, 1)
 
         #
@@ -44,6 +47,5 @@ def extractPosts():
         return logStr
 
     if bulkOrDelta == 'DELTA':
-        # Ask ashley: get the max date / id from, what, the dimension? or
-        # the source? And then pull out any new ones. Or changed, of course.
+        # TODO: #48 (question for AJ)
         pass
