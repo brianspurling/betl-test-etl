@@ -267,7 +267,7 @@ def loadAddressesToODS():
 
 
 def loadPostsToODS():
-    df_p = betl.readFromEtlDB('src_wp_documents')
+    df_p = betl.readFromCsv('src_wp_documents')
 
     betl.logStepStart('Drop unneeded column and rename the rest', 1)
     df_p.drop(['id_src', 'post_id'], axis=1, inplace=True)
@@ -311,8 +311,10 @@ def loadLinksToODS():
     cols = [
         'origin_node_original',
         'origin_node_cleaned',
+        'origin_node_type',
         'target_node_original',
         'target_node_cleaned',
+        'target_node_type',
         'start_date',
         'end_date',
         'link_type',
@@ -358,7 +360,12 @@ def loadLinksToODS():
               inplace=True)
     betl.logStepEnd(df)
 
-    betl.logStepStart('Reorder columns', 4)
+    betl.logStepStart('Add origin/target node types', 4)
+    df['origin_node_type'] = 'person'
+    df['target_node_type'] = 'company'
+    betl.logStepEnd(df)
+
+    betl.logStepStart('Reorder columns', 5)
     df = df[cols]
     betl.logStepEnd(df)
 
@@ -375,8 +382,10 @@ def loadLinksToODS():
               columns={
                 'origin_node_original': 'target_node_original',
                 'origin_node_cleaned': 'target_node_cleaned',
+                'origin_node_type': 'target_node_type',
                 'target_node_original': 'origin_node_original',
-                'target_node_cleaned': 'origin_node_cleaned'},
+                'target_node_cleaned': 'origin_node_cleaned',
+                'target_node_type': 'origin_node_type'},
               inplace=True)
     df = df[cols]
     betl.logStepEnd(df)
@@ -394,6 +403,6 @@ def setRelationship(row):
     if row['role_type'] == 'DIRECTOR':
         return 'd_of'
     elif row['role_type'] == 'SHAREHOLDER':
-        return 's_of'
-    elif row['role_type'] == 'SECRETARY':
         return 'sh_of'
+    elif row['role_type'] == 'SECRETARY':
+        return 's_of'

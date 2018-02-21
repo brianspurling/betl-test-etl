@@ -33,41 +33,39 @@ betl.scheduleDataFlow(df_extract.extractPosts, 'EXTRACT')
 
 # Load the ODS data model
 
-# betl.scheduleDataFlow(df_transform_ods.loadCompaniesToODS, 'TRANSFORM')
-# betl.scheduleDataFlow(df_transform_ods.loadPeopleToODS, 'TRANSFORM')
-# betl.scheduleDataFlow(df_transform_ods.loadAddressesToODS, 'TRANSFORM')
-# betl.scheduleDataFlow(df_transform_ods.loadPostsToODS, 'TRANSFORM')
-# betl.scheduleDataFlow(df_transform_ods.loadLinksToODS, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_ods.loadCompaniesToODS, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_ods.loadPeopleToODS, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_ods.loadAddressesToODS, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_ods.loadPostsToODS, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_ods.loadLinksToODS, 'TRANSFORM')
 
 # Load the MRG data model # -- Note, doesn't have a persistent layer
 
-# betl.scheduleDataFlow(df_transform_mrg.loadCompaniesToMRG, 'TRANSFORM')
-# betl.scheduleDataFlow(df_transform_mrg.loadPeopleToMRG, 'TRANSFORM')
-# betl.scheduleDataFlow(df_transform_mrg.loadAddressesToMRG, 'TRANSFORM')
-# betl.scheduleDataFlow(df_transform_mrg.loadLinksToMRG, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_mrg.loadCompaniesToMRG, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_mrg.loadPeopleToMRG, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_mrg.loadAddressesToMRG, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_mrg.loadLinksToMRG, 'TRANSFORM')
 
 # Dimensions #
 
 # Prepare dimension staging datasets
 
-# betl.scheduleDataFlow(df_transform_dm.prepareDMLinkType, 'TRANSFORM')
-# betl.scheduleDataFlow(df_transform_dm.prepareDMRelationship, 'TRANSFORM')
-# betl.scheduleDataFlow(df_transform_dm.prepareDMNode, 'TRANSFORM')
-# betl.scheduleDataFlow(df_transform_dm.prepareDMCorruptionDoc, 'TRANSFORM')
-# betl.scheduleDataFlow(df_transform_dm.prepareDMAddress, 'TRANSFORM')
-# betl.scheduleDataFlow(df_transform_dm.prepareDMAddressType, 'TRANSFORM')
-# betl.scheduleDataFlow(df_transform_dm.prepareDMNetworkMetric, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_dm.prepareDMLinkType, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_dm.prepareDMRelationship, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_dm.prepareDMNode, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_dm.prepareDMCorruptionDoc, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_dm.prepareDMAddress, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_dm.prepareDMAddressType, 'TRANSFORM')
+betl.scheduleDataFlow(df_transform_dm.prepareDMNetworkMetric, 'TRANSFORM')
 
 # DM date
-# betl.addDMDateToSchedule()
+betl.addDMDateToSchedule()
 
 # Facts #
 
 # Prepare fact staging datasets
 
 betl.scheduleDataFlow(df_transform_ft.prepareFTLinks, 'TRANSFORM')
-
-# Prepare fact staging datasets
 
 #####################
 # Load Job Schedule #

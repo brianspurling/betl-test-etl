@@ -45,14 +45,14 @@ def prepareDMNode():
 
 
 def prepareDMCorruptionDoc():
-    df = betl.readFromEtlDB('ods_posts')
+    df = betl.readFromCsv('ods_posts')
 
     betl.logStepStart('Add 3 columns: number_mentioned_*', 1)
-
     # TODO #39
     df['number_mentioned_nodes'] = 0
     df['number_mentioned_people'] = 0
     df['number_mentioned_companies'] = 0
+    betl.logStepEnd(df)
 
     betl.writeToCsv(df, 'trg_dm_corruption_doc')
 
