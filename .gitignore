@@ -1,3 +1,10 @@
+# Data etc
+tmp_data/
+logs/
+sql_scripts/
+src_data/
+profiling/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -24,8 +31,3 @@ var/
 # Keys
 bSETL-83cba3f29177.json
 
-# Data etc
-tmp_data/
-profiling/
-data/
-logs/

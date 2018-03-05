@@ -2,20 +2,20 @@ import betl
 import pandas as pd
 
 
-def prepareDMLinkType():
-    df = betl.readFromCsv('src_dm_link_type')
-    betl.writeToCsv(df, 'trg_dm_link_type')
+def prepareDMLinkType(scheduler):
+    df = betl.readDataFromCsv('src_dm_link_type')
+    betl.writeDataToCsv(df, 'trg_dm_link_type')
     del df
 
 
-def prepareDMRelationship():
-    df = betl.readFromCsv('src_dm_relationship')
-    betl.writeToCsv(df, 'trg_dm_relationship')
+def prepareDMRelationship(scheduler):
+    df = betl.readDataFromCsv('src_dm_relationship')
+    betl.writeDataToCsv(df, 'trg_dm_relationship')
     del df
 
 
-def prepareDMNode():
-    df_c = betl.readFromCsv('mrg_companies')
+def prepareDMNode(scheduler):
+    df_c = betl.readDataFromCsv('mrg_companies')
 
     betl.logStepStart('Rename column to name; add a node_type col', 1)
     df_c.rename(index=str,
@@ -24,7 +24,7 @@ def prepareDMNode():
     df_c['node_type'] = 'company'
     betl.logStepEnd(df_c)
 
-    df_p = betl.readFromCsv('mrg_people')
+    df_p = betl.readDataFromCsv('mrg_people')
 
     betl.logStepStart('Rename column to name; add a node_type col', 2)
     df_p.rename(index=str,
@@ -39,13 +39,13 @@ def prepareDMNode():
 
     del [df_p, df_c]
 
-    betl.writeToCsv(df_n, 'trg_dm_node')
+    betl.writeDataToCsv(df_n, 'trg_dm_node')
 
     del df_n
 
 
-def prepareDMCorruptionDoc():
-    df = betl.readFromCsv('ods_posts')
+def prepareDMCorruptionDoc(scheduler):
+    df = betl.readDataFromCsv('ods_posts')
 
     betl.logStepStart('Add 3 columns: number_mentioned_*', 1)
     # TODO #39
@@ -54,13 +54,13 @@ def prepareDMCorruptionDoc():
     df['number_mentioned_companies'] = 0
     betl.logStepEnd(df)
 
-    betl.writeToCsv(df, 'trg_dm_corruption_doc')
+    betl.writeDataToCsv(df, 'trg_dm_corruption_doc')
 
     del df
 
 
-def prepareDMAddress():
-    df = betl.readFromCsv('mrg_addresses')
+def prepareDMAddress(scheduler):
+    df = betl.readDataFromCsv('mrg_addresses')
 
     betl.logStepStart('Rename column: address to address_cleaned', 1)
     df.rename(index=str,
@@ -68,17 +68,17 @@ def prepareDMAddress():
               inplace=True)
     betl.logStepEnd(df)
 
-    betl.writeToCsv(df, 'trg_dm_address')
+    betl.writeDataToCsv(df, 'trg_dm_address')
 
     del df
 
 
-def prepareDMAddressType():
+def prepareDMAddressType(scheduler):
     # We have the address_types for people as
     # MSD, and we add to it the address_types for companies
 
-    df_p_at = betl.readFromCsv('src_dm_address_type')
-    df_c_a = betl.readFromCsv('ods_addresses')
+    df_p_at = betl.readDataFromCsv('src_dm_address_type')
+    df_c_a = betl.readDataFromCsv('ods_addresses')
 
     betl.logStepStart('Remove cols, rename, dedupe, add additional cols', 1)
     cols = list(df_c_a.columns.values)
@@ -99,12 +99,12 @@ def prepareDMAddressType():
 
     del [df_p_at, df_c_a]
 
-    betl.writeToCsv(df_at, 'trg_dm_address_type')
+    betl.writeDataToCsv(df_at, 'trg_dm_address_type')
 
     del df_at
 
 
-def prepareDMNetworkMetric():
-    df = betl.readFromEtlDB('src_dm_network_metric')
-    betl.writeToCsv(df, 'trg_dm_network_metric')
+def prepareDMNetworkMetric(scheduler):
+    df = betl.readDataFromCsv('src_dm_network_metric')
+    betl.writeDataToCsv(df, 'trg_dm_network_metric')
     del df

@@ -1,9 +1,9 @@
 import betl
 
 
-def loadCompaniesToMRG():
+def loadCompaniesToMRG(scheduler):
 
-    df_c = betl.readFromCsv('ods_companies')
+    df_c = betl.readDataFromCsv('ods_companies')
 
     # We consider two identical names to be the same company
     betl.logStepStart('Make unique on company_name_cleaned', 1)
@@ -13,14 +13,14 @@ def loadCompaniesToMRG():
     df_c.drop_duplicates(inplace=True)
     betl.logStepEnd(df_c)
 
-    betl.writeToCsv(df_c, 'mrg_companies')
+    betl.writeDataToCsv(df_c, 'mrg_companies')
 
     del df_c
 
 
-def loadPeopleToMRG():
+def loadPeopleToMRG(scheduler):
 
-    df_p = betl.readFromCsv('ods_people')
+    df_p = betl.readDataFromCsv('ods_people')
 
     # We consider two identical names to be the same person
     betl.logStepStart('Make unique on person_name_cleaned', 1)
@@ -30,14 +30,14 @@ def loadPeopleToMRG():
     df_p.drop_duplicates(inplace=True)
     betl.logStepEnd(df_p)
 
-    betl.writeToCsv(df_p, 'mrg_people')
+    betl.writeDataToCsv(df_p, 'mrg_people')
 
     del df_p
 
 
-def loadAddressesToMRG():
+def loadAddressesToMRG(scheduler):
 
-    df_a = betl.readFromCsv('ods_addresses')
+    df_a = betl.readDataFromCsv('ods_addresses')
 
     # We consider two identical names to be the same person
     betl.logStepStart('Make unique on address_cleaned', 1)
@@ -47,7 +47,7 @@ def loadAddressesToMRG():
     df_a.drop_duplicates(inplace=True)
     betl.logStepEnd(df_a)
 
-    betl.writeToCsv(df_a, 'mrg_addresses')
+    betl.writeDataToCsv(df_a, 'mrg_addresses')
 
     del df_a
 
@@ -64,9 +64,9 @@ def loadAddressesToMRG():
 # to be a genuine DQ issue (by virtue of the fact that we consdier them to be
 # the same person), and hence we can solve that DQ issue (duplicated edge in
 # network graph) by deduping here.
-def loadLinksToMRG():
+def loadLinksToMRG(scheduler):
 
-    df_p = betl.readFromCsv('ods_links')
+    df_p = betl.readDataFromCsv('ods_links')
 
     betl.logStepStart('Remove original origin/target cols and dedupe', 1)
     df_p.drop(['origin_node_original', 'target_node_original'],
@@ -75,6 +75,6 @@ def loadLinksToMRG():
     df_p.drop_duplicates(inplace=True)
     betl.logStepEnd(df_p)
 
-    betl.writeToCsv(df_p, 'mrg_links')
+    betl.writeDataToCsv(df_p, 'mrg_links')
 
     del df_p

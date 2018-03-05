@@ -1,8 +1,8 @@
 import betl
 
 
-def prepareFTLinks():
-    df = betl.readFromCsv('mrg_links')
+def prepareFTLinks(scheduler):
+    df = betl.readDataFromCsv('mrg_links')
 
     betl.logStepStart('Create NK columns', 1)
 
@@ -39,4 +39,4 @@ def prepareFTLinks():
     df['dd_duration'] = 10  # TODO placeholder for now
     betl.logStepEnd(df)
 
-    betl.writeToCsv(df, 'trg_ft_links')
+    betl.writeDataToCsv(df, 'trg_ft_links')

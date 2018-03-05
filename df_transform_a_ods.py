@@ -2,9 +2,9 @@ import betl
 import pandas as pd
 
 
-def loadCompaniesToODS():
+def loadCompaniesToODS(scheduler):
 
-    df_c = betl.readFromCsv('src_ipa_companies')
+    df_c = betl.readDataFromCsv('src_ipa_companies')
 
     betl.logStepStart('Add column: company_name_cleaned', 1)
     # TODO: #56 - apply proper cleaning logic, same for people.company_name
@@ -18,18 +18,18 @@ def loadCompaniesToODS():
                 inplace=True)
     betl.logStepEnd(df_c)
 
-    betl.writeToCsv(df_c, 'ods_companies')
+    betl.writeDataToCsv(df_c, 'ods_companies')
 
     del df_c
 
 
-def loadPeopleToODS():
+def loadPeopleToODS(scheduler):
 
     # We have people in directors, shareholders, and secretaries source tables,
     # So need to get them all into one dataset
 
     # Get the directors
-    df_d = betl.readFromCsv('src_ipa_directors')
+    df_d = betl.readDataFromCsv('src_ipa_directors')
 
     betl.logStepStart('Add column: src_table', 1)
     df_d['src_table'] = 'DIRECTORS'
@@ -47,13 +47,13 @@ def loadPeopleToODS():
     # based on the name (e.g. contains LIMITED), and flag them, so
     # they get picked up by the filter below
 
-    df_sh = betl.readFromCsv('src_ipa_shareholders')
+    df_sh = betl.readDataFromCsv('src_ipa_shareholders')
     betl.logStepStart('Add column: src_table', 2)
     df_sh['src_table'] = 'SHAREHOLDERS'
     betl.logStepEnd(df_sh)
 
     # Get the secretaries
-    df_s = betl.readFromCsv('src_ipa_secretaries')
+    df_s = betl.readDataFromCsv('src_ipa_secretaries')
 
     betl.logStepStart('Add column: src_table', 3)
     df_s['src_table'] = 'SECRETARIES'
@@ -153,12 +153,12 @@ def loadPeopleToODS():
     betl.logStepEnd(df_p)
 
     # Write to file
-    betl.writeToCsv(df_p, 'ods_people')
+    betl.writeDataToCsv(df_p, 'ods_people')
 
     del df_p
 
 
-def loadAddressesToODS():
+def loadAddressesToODS(scheduler):
 
     # We have addresses in the addresses table (company addresses),
     # and in directors, shareholders, and scretaries (people addresses)
@@ -166,7 +166,7 @@ def loadAddressesToODS():
 
     # Get the company addresses
 
-    df_c_a = betl.readFromCsv('src_ipa_addresses')
+    df_c_a = betl.readDataFromCsv('src_ipa_addresses')
 
     betl.logStepStart('Add column: src_table', 1)
     df_c_a['src_table'] = 'ADDRESSES'
@@ -174,7 +174,7 @@ def loadAddressesToODS():
 
     # Get the directors' addresses
 
-    df_d = betl.readFromCsv('src_ipa_directors')
+    df_d = betl.readDataFromCsv('src_ipa_directors')
 
     betl.logStepStart('Concat the two directors'' addresses together', 2)
     df_d_a_r = df_d['residential_address'].to_frame()
@@ -196,7 +196,7 @@ def loadAddressesToODS():
 
     # Get the shareholders' addresses
 
-    df_sh = betl.readFromCsv('src_ipa_shareholders')
+    df_sh = betl.readDataFromCsv('src_ipa_shareholders')
 
     betl.logStepStart('Concat the two shareholders'' addresses together', 4)
     df_sh_a_r = df_sh['residential_address'].to_frame()
@@ -218,7 +218,7 @@ def loadAddressesToODS():
 
     # Get the secretaries' addresses
 
-    df_s = betl.readFromCsv('src_ipa_secretaries')
+    df_s = betl.readDataFromCsv('src_ipa_secretaries')
 
     betl.logStepStart('Concat the two shareholders'' addresses together', 6)
     df_s_a_r = df_s['residential_address'].to_frame()
@@ -261,13 +261,13 @@ def loadAddressesToODS():
 
     # Write to file
 
-    betl.writeToCsv(df_a, 'ods_addresses')
+    betl.writeDataToCsv(df_a, 'ods_addresses')
 
     del df_a
 
 
-def loadPostsToODS():
-    df_p = betl.readFromCsv('src_wp_documents')
+def loadPostsToODS(scheduler):
+    df_p = betl.readDataFromCsv('src_wp_documents')
 
     betl.logStepStart('Drop unneeded column and rename the rest', 1)
     df_p.drop(['id_src', 'post_id'], axis=1, inplace=True)
@@ -297,7 +297,7 @@ def loadPostsToODS():
     df_p = df_p[cols]
     betl.logStepEnd(df_p)
 
-    betl.writeToCsv(df_p, 'ods_posts')
+    betl.writeDataToCsv(df_p, 'ods_posts')
 
     del df_p
 
@@ -305,7 +305,7 @@ def loadPostsToODS():
 #
 #
 #
-def loadLinksToODS():
+def loadLinksToODS(scheduler):
 
     betl.logStepStart('Create empty df_links', 1)
     cols = [
@@ -321,12 +321,11 @@ def loadLinksToODS():
         'relationship']
     df_temp = pd.DataFrame(columns=cols)
     betl.logStepEnd(df_temp)
-    betl.writeToCsv(df_temp, 'ods_links')
-    links_file = betl.openFileForAppend('ods_links')
+    betl.writeDataToCsv(df_temp, 'ods_links')
 
     # Basic roles #
 
-    df = betl.readFromCsv('ods_people')
+    df = betl.readDataFromCsv('ods_people')
     betl.logStepStart('Add columns: link_type and relationship', 1)
     df['link_type'] = 'P2C'
     df['relationship'] = df.apply(setRelationship, axis=1)
@@ -369,7 +368,7 @@ def loadLinksToODS():
     df = df[cols]
     betl.logStepEnd(df)
 
-    betl.writeToCsv(df, links_file)
+    betl.writeDataToCsv(df=df, file_or_filename='ods_links', mode='a')
 
     # Flip basic roles #
 
@@ -396,7 +395,7 @@ def loadLinksToODS():
         lambda row: row.relationship.replace('of', 'by'), axis=1)
     betl.logStepEnd(df)
 
-    betl.writeToCsv(df, links_file)
+    betl.writeDataToCsv(df=df, file_or_filename='ods_links', mode='a')
 
 
 def setRelationship(row):
