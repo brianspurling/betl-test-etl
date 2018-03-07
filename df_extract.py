@@ -15,8 +15,9 @@ def extractPosts(scheduler):
         df = betl.setAuditCols(df, 'WP', 'BULK')
         betl.logStepEnd(df)
 
-        betl.writeDataToCsv(df=df,
-                            file_or_filename='src_wp_documents')
+        betl.writeData(df=df,
+                       tableName='src_wp_documents',
+                       dataLayerID='SRC')
 
     elif scheduler.bulkOrDelta == 'DELTA':
         # TODO: #48 (question for AJ)

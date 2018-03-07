@@ -3,7 +3,7 @@ import betl
 
 def loadCompaniesToMRG(scheduler):
 
-    df_c = betl.readDataFromCsv('ods_companies')
+    df_c = betl.readData('ods_companies', 'STG')
 
     # We consider two identical names to be the same company
     betl.logStepStart('Make unique on company_name_cleaned', 1)
@@ -13,14 +13,14 @@ def loadCompaniesToMRG(scheduler):
     df_c.drop_duplicates(inplace=True)
     betl.logStepEnd(df_c)
 
-    betl.writeDataToCsv(df_c, 'mrg_companies')
+    betl.writeData(df_c, 'mrg_companies', 'STG')
 
     del df_c
 
 
 def loadPeopleToMRG(scheduler):
 
-    df_p = betl.readDataFromCsv('ods_people')
+    df_p = betl.readData('ods_people', 'STG')
 
     # We consider two identical names to be the same person
     betl.logStepStart('Make unique on person_name_cleaned', 1)
@@ -30,14 +30,14 @@ def loadPeopleToMRG(scheduler):
     df_p.drop_duplicates(inplace=True)
     betl.logStepEnd(df_p)
 
-    betl.writeDataToCsv(df_p, 'mrg_people')
+    betl.writeData(df_p, 'mrg_people', 'STG')
 
     del df_p
 
 
 def loadAddressesToMRG(scheduler):
 
-    df_a = betl.readDataFromCsv('ods_addresses')
+    df_a = betl.readData('ods_addresses', 'STG')
 
     # We consider two identical names to be the same person
     betl.logStepStart('Make unique on address_cleaned', 1)
@@ -47,7 +47,7 @@ def loadAddressesToMRG(scheduler):
     df_a.drop_duplicates(inplace=True)
     betl.logStepEnd(df_a)
 
-    betl.writeDataToCsv(df_a, 'mrg_addresses')
+    betl.writeData(df_a, 'mrg_addresses', 'STG')
 
     del df_a
 
@@ -66,7 +66,7 @@ def loadAddressesToMRG(scheduler):
 # network graph) by deduping here.
 def loadLinksToMRG(scheduler):
 
-    df_p = betl.readDataFromCsv('ods_links')
+    df_p = betl.readData('ods_links', 'STG')
 
     betl.logStepStart('Remove original origin/target cols and dedupe', 1)
     df_p.drop(['origin_node_original', 'target_node_original'],
@@ -75,6 +75,6 @@ def loadLinksToMRG(scheduler):
     df_p.drop_duplicates(inplace=True)
     betl.logStepEnd(df_p)
 
-    betl.writeDataToCsv(df_p, 'mrg_links')
+    betl.writeData(df_p, 'mrg_links', 'STG')
 
     del df_p
