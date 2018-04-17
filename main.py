@@ -32,11 +32,11 @@ scheduleConfig = {
         df_transform_ods.loadPeopleToODS,
         df_transform_ods.loadAddressesToODS,
         df_transform_ods.loadPostsToODS,
-        df_transform_ods.loadLinksToODS,
+        df_transform_ods.loadSrcLinksToODS,
         df_transform_mrg.loadCompaniesToMRG,
         df_transform_mrg.loadPeopleToMRG,
         df_transform_mrg.loadAddressesToMRG,
-        df_transform_mrg.loadLinksToMRG,
+        df_transform_mrg.loadSrcLinksToMRG,
         df_transform_dm.prepareDMLinkType,
         df_transform_dm.prepareDMRelationship,
         df_transform_dm.prepareDMNode,
@@ -44,7 +44,13 @@ scheduleConfig = {
         df_transform_dm.prepareDMAddress,
         df_transform_dm.prepareDMAddressType,
         df_transform_dm.prepareDMNetworkMetric,
-        df_transform_ft.prepareFTLinks],
+        df_transform_ft.loadSrcLinksIntoTempFile,
+        df_transform_ft.generateLinks_C2P,
+        df_transform_ft.generateLinks_P2P_prep,
+        df_transform_ft.generateLinks_P2P_where,
+        df_transform_ft.generateLinks_P2P_while,
+        df_transform_ft.prepareFTLinks
+    ],
     'LOAD_DFS': [
 
     ],

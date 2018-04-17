@@ -6,7 +6,8 @@ def loadCompaniesToMRG(scheduler):
     df_c = betl.readData('ods_companies', 'STG')
 
     # We consider two identical names to be the same company
-    betl.logStepStart('Make unique on company_name_cleaned', 1)
+    betl.logStepStart('Drop all other cols and make unique on ' +
+                      'company_name_cleaned', 1)
     cols = list(df_c.columns.values)
     cols.remove('company_name_cleaned')
     df_c.drop(cols, axis=1, inplace=True)
@@ -64,17 +65,17 @@ def loadAddressesToMRG(scheduler):
 # to be a genuine DQ issue (by virtue of the fact that we consdier them to be
 # the same person), and hence we can solve that DQ issue (duplicated edge in
 # network graph) by deduping here.
-def loadLinksToMRG(scheduler):
+def loadSrcLinksToMRG(scheduler):
 
-    df_p = betl.readData('ods_links', 'STG')
+    df = betl.readData('ods_src_links', 'STG')
 
     betl.logStepStart('Remove original origin/target cols and dedupe', 1)
-    df_p.drop(['origin_node_original', 'target_node_original'],
-              axis=1,
-              inplace=True)
-    df_p.drop_duplicates(inplace=True)
-    betl.logStepEnd(df_p)
+    df.drop(['origin_node_original', 'target_node_original'],
+            axis=1,
+            inplace=True)
+    df.drop_duplicates(inplace=True)
+    betl.logStepEnd(df)
 
-    betl.writeData(df_p, 'mrg_links', 'STG')
+    betl.writeData(df, 'mrg_src_links', 'STG')
 
-    del df_p
+    del df
