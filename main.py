@@ -7,6 +7,7 @@ import df_transform_b_mrg as df_transform_mrg
 import df_transform_c_trg_dm as df_transform_dm
 import df_transform_d_trg_ft as df_transform_ft
 import df_extract
+import df_load
 
 ##################
 # Configure betl #
@@ -52,7 +53,7 @@ scheduleConfig = {
         df_transform_ft.prepareFTLinks
     ],
     'LOAD_DFS': [
-
+        df_load.createTextSearchColumns
     ],
 }
 

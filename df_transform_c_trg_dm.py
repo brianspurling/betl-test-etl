@@ -17,7 +17,7 @@ def prepareDMRelationship(scheduler):
 def prepareDMNode(scheduler):
     df_c = betl.readData('mrg_companies', 'STG')
 
-    betl.logStepStart('Rename column to name; add a node_type col', 1)
+    betl.logStepStart('Company: rename column to name; add a node_type col', 1)
     df_c.rename(index=str,
                 columns={'company_name_cleaned': 'name'},
                 inplace=True)
@@ -26,7 +26,7 @@ def prepareDMNode(scheduler):
 
     df_p = betl.readData('mrg_people', 'STG')
 
-    betl.logStepStart('Rename column to name; add a node_type col', 2)
+    betl.logStepStart('Person: Rename column to name; add a node_type col', 2)
     df_p.rename(index=str,
                 columns={'person_name_cleaned': 'name'},
                 inplace=True)
@@ -39,6 +39,12 @@ def prepareDMNode(scheduler):
 
     del [df_p, df_c]
 
+    betl.logStepStart('Add empty columns (to be populated later)', 4)
+    df_n['name_tsquery'] = None
+    df_n['is_mentioned_in_docs'] = None
+    df_n['mentions_count'] = None
+    betl.logStepEnd(df_n)
+
     betl.writeData(df_n, 'trg_dm_node', 'STG')
 
     del df_n
@@ -47,11 +53,12 @@ def prepareDMNode(scheduler):
 def prepareDMCorruptionDoc(scheduler):
     df = betl.readData('ods_posts', 'STG')
 
-    betl.logStepStart('Add 3 columns: number_mentioned_*', 1)
+    betl.logStepStart('Add 4 columns: number_mentioned_*, and tsvector', 1)
     # TODO #39
     df['number_mentioned_nodes'] = 0
     df['number_mentioned_people'] = 0
     df['number_mentioned_companies'] = 0
+    df['corruption_doc_tsvector'] = None
     betl.logStepEnd(df)
 
     betl.writeData(df, 'trg_dm_corruption_doc', 'STG')

@@ -426,12 +426,12 @@ def loadPostsToODS(scheduler):
                 inplace=True)
     betl.logStepEnd(df_p)
 
-    betl.logStepStart('Create two additional columns and reorder', 2)
-    df_p['corruption_doc_tsvector'] = df_p['corruption_doc_content']
+    betl.logStepStart('Create two additional column and reorder', 2)
     df_p['corruption_doc_status'] = df_p['post_status']
+    # TODO: remove all reordring on all talbes that are data model - auto
+    # reordring should take care of this now
     cols = ['nk_post_id',
             'corruption_doc_content',
-            'corruption_doc_tsvector',
             'corruption_doc_name',
             'corruption_doc_date',
             'corruption_doc_title',

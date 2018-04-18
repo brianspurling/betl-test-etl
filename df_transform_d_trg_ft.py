@@ -1,5 +1,4 @@
 import betl
-import numpy as np
 
 
 def loadSrcLinksIntoTempFile(scheduler):
