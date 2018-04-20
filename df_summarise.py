@@ -21,7 +21,6 @@ def buildFtMentions_allInOne(scheduler):
         betl.writeData(df, 'su_mentions', 'SUM', 'append', forceDBWrite=True)
 
     elif scheduler.bulkOrDelta == 'DELTA':
-        # TODO:
         pass
 
 
@@ -32,6 +31,9 @@ def buildFtMentions(scheduler):
         for index, row in df_cd.iterrows():
             cd_id = row['corruption_doc_id']
 
+            if cd_id < 0:
+                continue
+
             sql = ''
             sql += "SELECT node_id as fk_node, \n"
             sql += "cd.corruption_doc_id as fk_corruption_doc, \n"
@@ -41,7 +43,6 @@ def buildFtMentions(scheduler):
             sql += "ON    cd.corruption_doc_content ILIKE " + \
                    "'% ' || n.name || ' %' \n"
             sql += "AND   cd.corruption_doc_id = " + str(cd_id) + "\n"
-            sql += "WHERE cd.corruption_doc_id >= 0 \n"
             sql += "AND   n.node_id >= 0 \n"
 
             df = betl.customSql(sql=sql,
@@ -51,7 +52,6 @@ def buildFtMentions(scheduler):
                                forceDBWrite=True)
 
     elif scheduler.bulkOrDelta == 'DELTA':
-        # TODO:
         pass
 
 
@@ -65,8 +65,6 @@ def writeBackMentions(scheduler):
         sql += "		   	from   su_mentions m \n"
         sql += "			where  m.fk_node = n.node_id) \n"
 
-        # TODO: custom sql shoudl take the DB, not the DL - which means DB
-        # needs to be stored in the schema object too, perhaps?
         betl.customSql(sql=sql, dataLayerID='TRG')
 
         sql = ''
@@ -94,5 +92,4 @@ def writeBackMentions(scheduler):
         betl.customSql(sql=sql, dataLayerID='TRG')
 
     elif scheduler.bulkOrDelta == 'DELTA':
-        # TODO:
         pass

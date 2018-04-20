@@ -97,8 +97,6 @@ def generateLinks_P2P_where(scheudler):
     df = df[cols]
     betl.logStepEnd(df)
 
-    # TODO: append is a bad idea - can't recover if we fail inside this subset
-    # of funcs.
     betl.writeData(df, 'tmp_ft_links', 'STG', 'append')
 
 
@@ -156,8 +154,6 @@ def generateLinks_P2P_while(scheudler):
     df = df[cols]
     betl.logStepEnd(df)
 
-    # TODO: append is a bad idea - can't recover if we fail inside this subset
-    # of funcs.
     betl.writeData(df, 'tmp_ft_links', 'STG', 'append')
 
 
@@ -198,7 +194,7 @@ def prepareFTLinks(scheduler):
     betl.logStepEnd(df)
 
     betl.logStepStart('Add duration DD', 4)
-    df['dd_duration'] = 10  # TODO placeholder for now
+    df['dd_duration'] = 10  
     betl.logStepEnd(df)
 
     betl.writeData(df, 'trg_ft_links', 'STG')

@@ -25,5 +25,4 @@ def createTextSearchColumns(scheduler):
                        dataLayerID='TRG')
 
     elif scheduler.bulkOrDelta == 'DELTA':
-        # TODO:
         pass

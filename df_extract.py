@@ -5,10 +5,6 @@ def extractPosts(scheduler):
 
     if scheduler.bulkOrDelta == 'BULK':
 
-        # TODO, was I not planning on using the ID here, and determingin
-        # the file name from the schema, or something, like dbs, or is that
-        # only for default extract? which of course I'm not doing for any files
-        # in this app. i have the extension saved in appConfig...
         df = betl.readDataFromSrcSys(srcSysID='WP',
                                      file_name_or_table_name='documents')
 
@@ -22,5 +18,4 @@ def extractPosts(scheduler):
                        forceDBWrite=True)
 
     elif scheduler.bulkOrDelta == 'DELTA':
-        # TODO: #48 (question for AJ)
         pass

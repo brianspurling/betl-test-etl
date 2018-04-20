@@ -54,7 +54,7 @@ def prepareDMCorruptionDoc(scheduler):
     df = betl.readData('ods_posts', 'STG')
 
     betl.logStepStart('Add 4 columns: number_mentioned_*, and tsvector', 1)
-    # TODO #39
+    
     df['number_mentioned_nodes'] = 0
     df['number_mentioned_people'] = 0
     df['number_mentioned_companies'] = 0

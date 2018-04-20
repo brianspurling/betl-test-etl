@@ -31,11 +31,6 @@ def loadCompaniesToODS(scheduler):
     betl.logStepEnd(df_c)
 
     # Load the companies that are shareholders out of the shareholders table
-    # TODO: Not sure whether these companies are also in the src_ipa_companies
-    # table, but we need to get them from src_ipa_shareholders anyway because,
-    # like ods_people, we are really storing the _relationships_ in
-    # ods_companies, not just the dimension. I should rename ods_companies and
-    # ods_people to make this clearer.
 
     df_sh = betl.readData('src_ipa_shareholders', 'SRC')
 
@@ -75,10 +70,6 @@ def loadCompaniesToODS(scheduler):
                              'company_shares_held_name_cleaned')
     betl.logStepEnd(df_sh)
 
-    # TODO this code is now repeated for ods_companies and ods_people
-    # I think I should make ODS_companies and ods_people strictly dimensions
-    # and move all this to ods_src_links. And then do links first, so that
-    # ods_people can work off of that (to avoid repeating concat logic)
     betl.logStepStart('Convert dates to date types and back to string, ' +
                       'in the format YYYYMMDD', 9)
     df_sh['appointment_date'] = \
@@ -107,7 +98,6 @@ def loadCompaniesToODS(scheduler):
     betl.writeData(df_both, 'ods_companies', 'STG')
 
     del df_both
-    # TODO: I think I've been slack recently on dels. I should check all funcs
 
 
 def loadPeopleToODS(scheduler):
@@ -146,16 +136,6 @@ def loadPeopleToODS(scheduler):
     betl.logStepEnd(df_d)
 
     # Get the shareholders
-
-    # src_ipa_shareholders holds both people and companies. There is an
-    # is_company flag (all 0 or 1), and a shareholding_company_number
-    # (mostly '')
-    # Some rows are flagged as a company, but have no company number.
-    # But, vv, every row with a company number is flagged
-    # TODO: what shall we do with these flags?
-    # DQ TASK: implement some rules to identify additional companies
-    # based on the name (e.g. contains LIMITED), and flag them, so
-    # they get picked up by the filter below
 
     df_sh = betl.readData('src_ipa_shareholders', 'SRC')
 
@@ -260,8 +240,6 @@ def loadPeopleToODS(scheduler):
                             'company_name_cleaned')
     betl.logStepEnd(df_p)
 
-    # TODO: BETL Should report on out-of-bound dates, not just coerce them
-    # to NaT
     betl.logStepStart('Convert dates to date types and back to string, ' +
                       'in the format YYYYMMDD', 14)
     df_p['appointment_date'] = \
@@ -393,7 +371,6 @@ def loadAddressesToODS(scheduler):
     # Add cleaned address column
 
     betl.logStepStart('Add column: address_cleaned', 9)
-    # TODO: #56 - apply proper cleaning logic
     df_a['address_cleaned'] = df_a['address'].str[0:]
     betl.logStepEnd(df_a)
 
@@ -433,8 +410,7 @@ def loadPostsToODS(scheduler):
 
     betl.logStepStart('Create two additional column and reorder', 3)
     df_p['corruption_doc_status'] = df_p['post_status']
-    # TODO: remove all reordring on all talbes that are data model - auto
-    # reordring should take care of this now
+
     cols = ['nk_post_id',
             'corruption_doc_content',
             'corruption_doc_name',
