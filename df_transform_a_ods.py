@@ -414,9 +414,9 @@ def loadPostsToODS(scheduler):
     df_p = betl.readData('src_wp_documents', 'SRC')
 
     betl.logStepStart('Drop unneeded column and rename the rest', 1)
-    df_p.drop(['id_src', 'post_id'], axis=1, inplace=True)
+    df_p.drop(['src_id', 'post_id'], axis=1, inplace=True)
     df_p.rename(index=str,
-                columns={'src_id': 'nk_post_id',
+                columns={'id_src': 'nk_post_id',
                          'post_content': 'corruption_doc_content',
                          'post_name': 'corruption_doc_name',
                          'post_date': 'corruption_doc_date',
@@ -426,7 +426,12 @@ def loadPostsToODS(scheduler):
                 inplace=True)
     betl.logStepEnd(df_p)
 
-    betl.logStepStart('Create two additional column and reorder', 2)
+    # It appears we have multiple copies of some of the posts (versions?)
+    betl.logStepStart('Remove duplicates', 2)
+    df_p.drop_duplicates(inplace=True)
+    betl.logStepEnd(df_p)
+
+    betl.logStepStart('Create two additional column and reorder', 3)
     df_p['corruption_doc_status'] = df_p['post_status']
     # TODO: remove all reordring on all talbes that are data model - auto
     # reordring should take care of this now
@@ -441,7 +446,7 @@ def loadPostsToODS(scheduler):
     df_p = df_p[cols]
     betl.logStepEnd(df_p)
 
-    betl.writeData(df_p, 'ods_posts', 'STG')
+    betl.writeData(df_p, 'ods_posts', 'STG', forceDBWrite=True)
 
     del df_p
 

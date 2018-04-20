@@ -47,17 +47,6 @@ def generateLinks_P2P_prep(scheduler):
     df = df.loc[df['link_type'] == 'P2C']
     betl.logStepEnd(df)
 
-    # betl.logStepStart('Group to min/max start/end dates)', 2)
-    # df = df.groupby(['origin_node_cleaned',
-    #                  'origin_node_type',
-    #                  'target_node_cleaned',
-    #                  'target_node_type',
-    #                  'link_type',
-    #                  'relationship'],
-    #                 as_index=False).agg({'start_date': np.min,
-    #                                      'end_date': np.max})
-    # betl.logStepEnd(df)
-
     # Force this to DB because next step is SQL that we must push down to DB
     betl.writeData(df, 'tmp_ft_links_src_grouped', 'STG', forceDBWrite=True)
 
@@ -65,8 +54,6 @@ def generateLinks_P2P_prep(scheduler):
 def generateLinks_P2P_where(scheudler):
 
     sql = ''
-    sql += "DROP TABLE IF EXISTS tmp_ft_links_P2P_where; \n"
-    sql += "CREATE TABLE tmp_ft_links_P2P_where AS \n"
     sql += "SELECT LEAST(l1.start_date, l2.start_date) AS start_date, \n"
     sql += "       GREATEST(l1.end_date, l2.end_date) AS end_date, \n"
     sql += "       l1.origin_node_cleaned, \n"
@@ -103,11 +90,10 @@ def generateLinks_P2P_where(scheudler):
     sql += "ON l1.target_node_cleaned = l2.target_node_cleaned \n"
     sql += "WHERE  l1.origin_node_cleaned <> l2.origin_node_cleaned; "
 
-    df = betl.customSql(sql, 'STG', 'tmp_ft_links_P2P_where')
-
-    cols = betl.getColumnHeadings('tmp_ft_links', 'STG')
+    df = betl.customSql(sql, 'STG')
 
     betl.logStepStart('Reorder columns', 1)
+    cols = betl.getColumnHeadings('tmp_ft_links', 'STG')
     df = df[cols]
     betl.logStepEnd(df)
 
@@ -119,8 +105,6 @@ def generateLinks_P2P_where(scheudler):
 def generateLinks_P2P_while(scheudler):
 
     sql = ''
-    sql += "DROP TABLE IF EXISTS tmp_ft_links_P2P_while; \n"
-    sql += "CREATE TABLE tmp_ft_links_P2P_while AS \n"
     sql += "SELECT LEAST(l1.start_date, l2.start_date) AS start_date, \n"
     sql += "       GREATEST(l1.end_date, l2.end_date) AS end_date, \n"
     sql += "       l1.origin_node_cleaned, \n"
@@ -164,7 +148,7 @@ def generateLinks_P2P_while(scheudler):
     sql += "     coalesce(to_date(l2.end_date, 'YYYYMMDD'),CURRENT_DATE))\n"
     sql += "WHERE  l1.origin_node_cleaned <> l2.origin_node_cleaned; "
 
-    df = betl.customSql(sql, 'STG', 'tmp_ft_links_P2P_while')
+    df = betl.customSql(sql, 'STG')
 
     cols = betl.getColumnHeadings('tmp_ft_links', 'STG')
 

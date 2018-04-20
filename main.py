@@ -8,6 +8,7 @@ import df_transform_c_trg_dm as df_transform_dm
 import df_transform_d_trg_ft as df_transform_ft
 import df_extract
 import df_load
+import df_summarise
 
 ##################
 # Configure betl #
@@ -19,6 +20,7 @@ scheduleConfig = {
         'src_wp_documents'
     ],
     'DEFAULT_LOAD': True,
+    'DEFAULT_SUMMARISE': True,
     'DEFAULT_DM_DATE': True,
     'TRG_TABLES_TO_EXCLUDE_FROM_DEFAULT_LOAD': [
         'ft_mentions',
@@ -53,8 +55,12 @@ scheduleConfig = {
         df_transform_ft.prepareFTLinks
     ],
     'LOAD_DFS': [
-        df_load.createTextSearchColumns
+        df_load.createTextSearchColumns,
     ],
+    'SUMMARISE_DFS': [
+        df_summarise.buildFtMentions,
+        df_summarise.writeBackMentions
+    ]
 }
 
 betl.run(appConfigFile='./appConfig.ini',

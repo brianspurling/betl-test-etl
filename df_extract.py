@@ -11,13 +11,15 @@ def extractPosts(scheduler):
         # in this app. i have the extension saved in appConfig...
         df = betl.readDataFromSrcSys(srcSysID='WP',
                                      file_name_or_table_name='documents')
+
         betl.logStepStart('Setting audit columns', 1)
         df = betl.setAuditCols(df, 'WP', 'BULK')
         betl.logStepEnd(df)
 
         betl.writeData(df=df,
                        tableName='src_wp_documents',
-                       dataLayerID='SRC')
+                       dataLayerID='SRC',
+                       forceDBWrite=True)
 
     elif scheduler.bulkOrDelta == 'DELTA':
         # TODO: #48 (question for AJ)
