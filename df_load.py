@@ -11,7 +11,7 @@ def createTextSearchColumns(scheduler):
         sql = ''
         sql += "UPDATE dm_corruption_doc \n"
         sql += "SET    corruption_doc_tsvector = " + \
-               "to_tsvector(corruption_doc_content)"
+               "to_tsvector(corruption_doc_content_alphanumeric)"
 
         betl.customSql(sql=sql,
                        dataLayerID='TRG')
@@ -19,7 +19,7 @@ def createTextSearchColumns(scheduler):
         sql = ''
         sql += "UPDATE dm_node \n"
         sql += "SET    name_tsquery = " + \
-               "plainto_tsquery(name)"
+               "plainto_tsquery(name_alphanumeric)"
 
         betl.customSql(sql=sql,
                        dataLayerID='TRG')

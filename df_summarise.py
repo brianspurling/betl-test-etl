@@ -7,20 +7,38 @@ def buildFtMentions(scheduler):
 
         df_cd = betl.readData('dm_corruption_doc', 'TRG', forceDBRead='TRG')
         df_n = betl.readData('dm_node', 'TRG', forceDBRead='TRG')
-        df_n['name'] = df_n['name'].str.lower()
 
-        betl.logStepStart('Creating a single object for all documents')
-        allContent = df_cd['corruption_doc_content'].str.cat(sep='. ').lower()
+        betl.logStepStart('Creating two large strings of all doc content ' +
+                          '(clean and alphanumeric)')
+        allContent_clean = \
+            df_cd['corruption_doc_content_cleaned'].str.cat(sep=' . ')
+        allContent_alpha = \
+            df_cd['corruption_doc_content_alphanumeric'].str.cat(sep=' . ')
         betl.logStepEnd()
 
-        betl.logStepStart('Identifing all nodes mentioned somewhere')
-        # this is the big one. Takes about 3 hours, and searches all documents
+        # this is the big one. Takes about 5 hours, and searches all documents
         # (in a single string) for every node name (one by one)
-        df_mn = pd.DataFrame(columns=['node_id', 'name'])
+        betl.logStepStart('Identifing all nodes mentioned somewhere')
+        df_mn = pd.DataFrame(columns=[
+            'node_id',
+            'name',
+            'name_alphanumeric'])
+        count = 0
         for row in df_n.itertuples():
-            if(row[3] in allContent):
-                df_mn.loc[len(df_mn)] = [row[1], row[3]]
+            count += 1
+            if(row[3] in allContent_clean):
+                df_mn.loc[len(df_mn)] = [row[1], row[3], row[4]]
+            elif(row[4] in allContent_alpha):
+                df_mn.loc[len(df_mn)] = [row[1], row[3], row[4]]
+            # Approx once ever x minutes, write to file 
+            if count % 10000 == 0:
+                betl.writeData(
+                    df_mn,
+                    'tmp_su_mentions',
+                    'SUM')
         betl.logStepEnd(df_mn)
+
+        betl.writeData(df_mn, 'tmp_su_mentions', 'SUM')
 
         betl.logStepStart('Creating su_mentions (doc/node pairs)')
         df_m = pd.DataFrame(columns=[
@@ -32,22 +50,42 @@ def buildFtMentions(scheduler):
         for node in df_mn.itertuples():
 
             # This is the main text search
-            matches = df_cd['corruption_doc_content'].str.count(node[2])
-            df_matches = pd.DataFrame(matches)
-            df_matches.columns = ['mentions_count']
+            matches_clean = \
+                df_cd['corruption_doc_content_cleaned'].str.count(node[3])
+            matches_alpha = \
+                df_cd['corruption_doc_content_alphanumeric'].str.count(node[4])
+            df_matches_clean = pd.DataFrame(matches_clean)
+            df_matches_alpha = pd.DataFrame(matches_alpha)
+            df_matches_clean.columns = ['mentions_count_clean']
+            df_matches_alpha.columns = ['mentions_count_alpha']
 
             df_temp = pd.DataFrame(
                 columns=[
                     'fk_corruption_doc',
                     'fk_node',
                     'mentions_count',
+                    'mentions_count_clean',
+                    'mentions_count_alpha',
                     'is_mentioned_count'])
             df_temp['fk_corruption_doc'] = \
                 pd.to_numeric(df_cd['corruption_doc_id'])
             nodeID = int(node[1])
             df_temp['fk_node'] = nodeID
+            df_temp['mentions_count_clean'] = \
+                pd.to_numeric(
+                    df_matches_clean['mentions_count_clean'],
+                    downcast='integer')
+            df_temp['mentions_count_alpha'] = \
+                pd.to_numeric(
+                    df_matches_alpha['mentions_count_alpha'],
+                    downcast='integer')
             df_temp['mentions_count'] = \
-                pd.to_numeric(df_matches['mentions_count'], downcast='integer')
+                df_temp['mentions_count_clean'] + \
+                df_temp['mentions_count_alpha']
+            df_temp.drop(
+                ['mentions_count_clean', 'mentions_count_alpha'],
+                axis=1,
+                inplace=True)
             df_m = pd.concat(objs=[df_m, df_temp])
 
         df_m = df_m.loc[df_m['mentions_count'] > 0]

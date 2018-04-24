@@ -258,28 +258,6 @@ def loadPeopleToODS(scheduler):
     del df_p
 
 
-def cleanPersonName(df, nameToClean, targetCol):
-    df[targetCol] = df[nameToClean].str.upper()
-    # Replace double spaces with single
-    df[targetCol] = \
-        df[targetCol].str.replace('\s+', ' ')
-    # Replace back ticks with single quote
-    df[targetCol] = \
-        df[targetCol].str.replace('`', "'")
-    # Replace &#8217; (apostrophe) with single quote
-    df[targetCol] = \
-        df[targetCol].str.replace('&#8217;', "'")
-    return df
-
-
-def cleanCompanyName(df, nameToClean, targetCol):
-    df[targetCol] = df[nameToClean].str.upper()
-    # Replace double spaces with single
-    df[targetCol] = \
-        df[targetCol].str.replace('\s+', ' ')
-    return df
-
-
 def loadAddressesToODS(scheduler):
 
     # We have addresses in the addresses table (company addresses),
@@ -411,8 +389,14 @@ def loadPostsToODS(scheduler):
     betl.logStepStart('Create two additional column and reorder', 3)
     df_p['corruption_doc_status'] = df_p['post_status']
 
+    df_p = cleanPostContent(
+        df_p,
+        'corruption_doc_content',
+        'corruption_doc_content_cleaned')
+
     cols = ['nk_post_id',
             'corruption_doc_content',
+            'corruption_doc_content_cleaned',
             'corruption_doc_name',
             'corruption_doc_date',
             'corruption_doc_title',
@@ -422,7 +406,7 @@ def loadPostsToODS(scheduler):
     df_p = df_p[cols]
     betl.logStepEnd(df_p)
 
-    betl.writeData(df_p, 'ods_posts', 'STG', forceDBWrite=True)
+    betl.writeData(df_p, 'ods_posts', 'STG')
 
     del df_p
 
@@ -547,3 +531,48 @@ def setP2CRelationship(row):
         return 'sh_of'
     elif row['role_type'] == 'SECRETARY':
         return 's_of'
+
+
+def cleanPersonName(df, colToClean, targetCol):
+    df[targetCol] = df[colToClean].str.upper()
+    # Replace double spaces with single
+    df[targetCol] = \
+        df[targetCol].str.replace('\s+', ' ')
+    # Replace back ticks with single quote
+    df[targetCol] = \
+        df[targetCol].str.replace('`', "'")
+    # Replace &#8217; (apostrophe) with single quote
+    df[targetCol] = \
+        df[targetCol].str.replace('&#8217;', "'")
+    return df
+
+
+def cleanCompanyName(df, colToClean, targetCol):
+    df[targetCol] = df[colToClean].str.upper()
+    # Replace double spaces with single
+    df[targetCol] = \
+        df[targetCol].str.replace('\s+', ' ')
+    return df
+
+
+def cleanPostContent(df, colToClean, targetCol):
+
+    df[targetCol] = df[colToClean].str.upper()
+    # Remove line break
+    df[targetCol] = \
+        df[targetCol].str.replace('\n', ' ')
+    df[targetCol] = \
+        df[targetCol].str.replace('\r', ' ')
+    # Replace back ticks with single quote
+    df[targetCol] = \
+        df[targetCol].str.replace('`', "'")
+    # Replace &#8217; (apostrophe) with single quote
+    df[targetCol] = \
+        df[targetCol].str.replace('&#8217;', "'")
+
+    return df
+
+    # update ods_pages set post_content = replace(post_content, '\n', ' '); --remove new line
+    # update ods_pages set post_content = replace(post_content, '\r', ' ');
+
+    # update ods_pages set post_content = replace(post_content, '’', '''');

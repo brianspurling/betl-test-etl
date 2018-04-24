@@ -39,7 +39,11 @@ def prepareDMNode(scheduler):
 
     del [df_p, df_c]
 
-    betl.logStepStart('Add empty columns (to be populated later)', 4)
+    betl.logStepStart('Add alphnumeric node name col', 4)
+    df_n['name_alphanumeric'] = df_n['name'].str.replace('[^[:alnum:] ]', ' ')
+    betl.logStepEnd(df_n)
+
+    betl.logStepStart('Add empty columns (to be populated later)', 5)
     df_n['name_tsquery'] = None
     df_n['is_mentioned_in_docs'] = None
     df_n['mentions_count'] = None
@@ -53,8 +57,12 @@ def prepareDMNode(scheduler):
 def prepareDMCorruptionDoc(scheduler):
     df = betl.readData('ods_posts', 'STG')
 
-    betl.logStepStart('Add 4 columns: number_mentioned_*, and tsvector', 1)
-    
+    betl.logStepStart('Add alphnumeric content col', 1)
+    df['corruption_doc_content_alphanumeric'] = \
+        df['corruption_doc_content'].str.replace('[^[:alnum:] ]', ' ')
+    betl.logStepEnd(df)
+
+    betl.logStepStart('Add 4 columns: number_mentioned_*, and tsvector', 2)
     df['number_mentioned_nodes'] = 0
     df['number_mentioned_people'] = 0
     df['number_mentioned_companies'] = 0

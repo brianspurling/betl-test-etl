@@ -14,8 +14,7 @@ def extractPosts(scheduler):
 
         betl.writeData(df=df,
                        tableName='src_wp_documents',
-                       dataLayerID='SRC',
-                       forceDBWrite=True)
+                       dataLayerID='SRC')
 
     elif scheduler.bulkOrDelta == 'DELTA':
         pass
