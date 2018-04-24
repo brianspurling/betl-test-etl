@@ -1,55 +1,59 @@
 import betl
-
-
-# Not being used, think the loop option below is faster
-def buildFtMentions_allInOne(scheduler):
-
-    if scheduler.bulkOrDelta == 'BULK':
-        sql = ''
-        sql += "SELECT node_id as fk_node, \n"
-        sql += "cd.corruption_doc_id as fk_corruption_doc, \n"
-        sql += "1 as is_mentioned_count \n"
-        sql += "FROM   DM_NODE n \n"
-        sql += "INNER JOIN dm_corruption_doc cd \n"
-        sql += "ON cd.corruption_doc_content ILIKE '% ' || n.name || ' %' \n"
-        sql += "WHERE cd.corruption_doc_id >= 0 \n"
-        sql += "AND   n.node_id >= 0 \n"
-
-        df = betl.customSql(sql=sql,
-                            dataLayerID='TRG')
-
-        betl.writeData(df, 'su_mentions', 'SUM', 'append', forceDBWrite=True)
-
-    elif scheduler.bulkOrDelta == 'DELTA':
-        pass
+import pandas as pd
 
 
 def buildFtMentions(scheduler):
-
     if scheduler.bulkOrDelta == 'BULK':
+
         df_cd = betl.readData('dm_corruption_doc', 'TRG', forceDBRead='TRG')
-        for index, row in df_cd.iterrows():
-            cd_id = row['corruption_doc_id']
+        df_n = betl.readData('dm_node', 'TRG', forceDBRead='TRG')
+        df_n['name'] = df_n['name'].str.lower()
 
-            if cd_id < 0:
-                continue
+        betl.logStepStart('Creating a single object for all documents')
+        allContent = df_cd['corruption_doc_content'].str.cat(sep='. ').lower()
+        betl.logStepEnd()
 
-            sql = ''
-            sql += "SELECT node_id as fk_node, \n"
-            sql += "cd.corruption_doc_id as fk_corruption_doc, \n"
-            sql += "1 as is_mentioned_count \n"
-            sql += "FROM   DM_NODE n \n"
-            sql += "INNER JOIN dm_corruption_doc cd \n"
-            sql += "ON    cd.corruption_doc_content ILIKE " + \
-                   "'% ' || n.name || ' %' \n"
-            sql += "AND   cd.corruption_doc_id = " + str(cd_id) + "\n"
-            sql += "AND   n.node_id >= 0 \n"
+        betl.logStepStart('Identifing all nodes mentioned somewhere')
+        # this is the big one. Takes about 3 hours, and searches all documents
+        # (in a single string) for every node name (one by one)
+        df_mn = pd.DataFrame(columns=['node_id', 'name'])
+        for row in df_n.itertuples():
+            if(row[3] in allContent):
+                df_mn.loc[len(df_mn)] = [row[1], row[3]]
+        betl.logStepEnd(df_mn)
 
-            df = betl.customSql(sql=sql,
-                                dataLayerID='TRG')
-            if len(df) > 0:
-                betl.writeData(df, 'su_mentions', 'SUM', 'append',
-                               forceDBWrite=True)
+        betl.logStepStart('Creating su_mentions (doc/node pairs)')
+        df_m = pd.DataFrame(columns=[
+            'fk_node',
+            'fk_corruption_doc',
+            'mentions_count',
+            'is_mentioned_count'])
+
+        for node in df_mn.itertuples():
+
+            # This is the main text search
+            matches = df_cd['corruption_doc_content'].str.count(node[2])
+            df_matches = pd.DataFrame(matches)
+            df_matches.columns = ['mentions_count']
+
+            df_temp = pd.DataFrame(
+                columns=[
+                    'fk_corruption_doc',
+                    'fk_node',
+                    'mentions_count',
+                    'is_mentioned_count'])
+            df_temp['fk_corruption_doc'] = \
+                pd.to_numeric(df_cd['corruption_doc_id'])
+            nodeID = int(node[1])
+            df_temp['fk_node'] = nodeID
+            df_temp['mentions_count'] = \
+                pd.to_numeric(df_matches['mentions_count'], downcast='integer')
+            df_m = pd.concat(objs=[df_m, df_temp])
+
+        df_m = df_m.loc[df_m['mentions_count'] > 0]
+        betl.logStepEnd(df_m)
+
+        betl.writeData(df_m, 'su_mentions', 'SUM', forceDBWrite=True)
 
     elif scheduler.bulkOrDelta == 'DELTA':
         pass
