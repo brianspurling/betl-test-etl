@@ -63,6 +63,8 @@ scheduleConfig = {
     ]
 }
 
-betl.run(appConfigFile='./appConfig.ini',
-         runTimeParams=betl.processArgs(sys.argv),
-         scheduleConfig=scheduleConfig)
+betl.init(appConfigFile='./appConfig.ini',
+          runTimeParams=sys.argv,
+          scheduleConfig=scheduleConfig)
+
+betl.run()
