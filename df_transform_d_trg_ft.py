@@ -1,4 +1,5 @@
 import betl
+import datetime
 
 
 def loadSrcLinksIntoTempFile(scheduler):
@@ -194,7 +195,25 @@ def prepareFTLinks(scheduler):
     betl.logStepEnd(df)
 
     betl.logStepStart('Add duration DD', 4)
-    df['dd_duration'] = 10  
+    df['dd_duration'] = 0
+    df['dd_duration'] = df.apply(calculateDuration, axis=1)
     betl.logStepEnd(df)
 
     betl.writeData(df, 'trg_ft_links', 'STG')
+
+
+def calculateDuration(row):
+    if row['nk_start_date'] is None or row['nk_start_date'] == '':
+        duration = 0
+    else:
+        startDate = \
+            datetime.datetime.strptime(row['nk_start_date'], '%Y%M%d').date()
+        if row['nk_end_date'] is None or row['nk_end_date'] == '':
+            endDate = datetime.date.today()
+        else:
+            endDate = \
+                datetime.datetime.strptime(row['nk_end_date'], '%Y%M%d').date()
+        duration = (endDate - startDate).days
+    duration_int = int(duration)
+
+    return duration_int
