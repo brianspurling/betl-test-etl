@@ -30,7 +30,7 @@ def buildFtMentions(scheduler):
                 df_mn.loc[len(df_mn)] = [row[1], row[3], row[4]]
             elif(row[4] in allContent_alpha):
                 df_mn.loc[len(df_mn)] = [row[1], row[3], row[4]]
-            # Approx once ever x minutes, write to file 
+            # Approx once ever x minutes, write to file
             if count % 10000 == 0:
                 betl.writeData(
                     df_mn,
@@ -51,9 +51,9 @@ def buildFtMentions(scheduler):
 
             # This is the main text search
             matches_clean = \
-                df_cd['corruption_doc_content_cleaned'].str.count(node[3])
+                df_cd['corruption_doc_content_cleaned'].str.count(node[2])
             matches_alpha = \
-                df_cd['corruption_doc_content_alphanumeric'].str.count(node[4])
+                df_cd['corruption_doc_content_alphanumeric'].str.count(node[3])
             df_matches_clean = pd.DataFrame(matches_clean)
             df_matches_alpha = pd.DataFrame(matches_alpha)
             df_matches_clean.columns = ['mentions_count_clean']
