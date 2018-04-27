@@ -571,8 +571,3 @@ def cleanPostContent(df, colToClean, targetCol):
         df[targetCol].str.replace('&#8217;', "'")
 
     return df
-
-    # update ods_pages set post_content = replace(post_content, '\n', ' '); --remove new line
-    # update ods_pages set post_content = replace(post_content, '\r', ' ');
-
-    # update ods_pages set post_content = replace(post_content, '’', '''');
