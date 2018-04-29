@@ -3,54 +3,74 @@ import betl
 
 def loadCompaniesToMRG(scheduler):
 
-    df_c = betl.readData('ods_companies', 'STG')
+    dfl = betl.DataFlow(
+        desc='Create a unique list of cleaned company names - we consider ' +
+             'two identical names to be the same company')
 
-    # We consider two identical names to be the same company
-    betl.logStepStart('Drop all other cols and make unique on ' +
-                      'company_name_cleaned', 1)
-    cols = list(df_c.columns.values)
-    cols.remove('company_name_cleaned')
-    df_c.drop(cols, axis=1, inplace=True)
-    df_c.drop_duplicates(inplace=True)
-    betl.logStepEnd(df_c)
+    dfl.read(tableName='ods_companies', dataLayer='STG')
 
-    betl.writeData(df_c, 'mrg_companies', 'STG')
+    dfl.dropColumns(
+        dataset='ods_companies',
+        colsToKeep=['company_name_cleaned'],
+        desc='Drop all cols other than company_name_cleaned')
 
-    del df_c
+    dfl.dedupe(dataset='ods_companies',
+               desc='Make list of cleaned company names unique')
+
+    dfl.write(
+        dataset='ods_companies',
+        targetTableName='mrg_companies',
+        dataLayerID='STG')
+
+    dfl.close()
 
 
 def loadPeopleToMRG(scheduler):
 
-    df_p = betl.readData('ods_people', 'STG')
+    dfl = betl.DataFlow(
+        desc='Create a unique list of cleaned person names - we consider ' +
+             'two identical names to be the same person')
 
-    # We consider two identical names to be the same person
-    betl.logStepStart('Make unique on person_name_cleaned', 1)
-    cols = list(df_p.columns.values)
-    cols.remove('person_name_cleaned')
-    df_p.drop(cols, axis=1, inplace=True)
-    df_p.drop_duplicates(inplace=True)
-    betl.logStepEnd(df_p)
+    dfl.read(tableName='ods_people', dataLayer='STG')
 
-    betl.writeData(df_p, 'mrg_people', 'STG')
+    dfl.dropColumns(
+        dataset='ods_people',
+        colsToKeep=['person_name_cleaned'],
+        desc='Drop all cols other than person_name_cleaned')
 
-    del df_p
+    dfl.dedupe(dataset='ods_people',
+               desc='Make list of cleaned person names unique')
+
+    dfl.write(
+        dataset='ods_people',
+        targetTableName='mrg_people',
+        dataLayerID='STG')
+
+    dfl.close()
 
 
 def loadAddressesToMRG(scheduler):
 
-    df_a = betl.readData('ods_addresses', 'STG')
+    dfl = betl.DataFlow(
+        desc='Create a unique list of cleaned addresses - we consider ' +
+             'two identical addresses to be the same address')
 
-    # We consider two identical names to be the same person
-    betl.logStepStart('Make unique on address_cleaned', 1)
-    cols = list(df_a.columns.values)
-    cols.remove('address_cleaned')
-    df_a.drop(cols, axis=1, inplace=True)
-    df_a.drop_duplicates(inplace=True)
-    betl.logStepEnd(df_a)
+    dfl.read(tableName='ods_addresses', dataLayer='STG')
 
-    betl.writeData(df_a, 'mrg_addresses', 'STG')
+    dfl.dropColumns(
+        dataset='ods_addresses',
+        colsToKeep=['address_cleaned'],
+        desc='Drop all cols other than address_cleaned')
 
-    del df_a
+    dfl.dedupe(dataset='ods_addresses',
+               desc='Make list of cleaned addresses unique')
+
+    dfl.write(
+        dataset='ods_addresses',
+        targetTableName='mrg_addresses',
+        dataLayerID='STG')
+
+    dfl.close()
 
 
 # In theory, there shouldn't be any duplicate links, because this is the
@@ -65,17 +85,25 @@ def loadAddressesToMRG(scheduler):
 # to be a genuine DQ issue (by virtue of the fact that we consdier them to be
 # the same person), and hence we can solve that DQ issue (duplicated edge in
 # network graph) by deduping here.
+
 def loadSrcLinksToMRG(scheduler):
 
-    df = betl.readData('ods_src_links', 'STG')
+    dfl = betl.DataFlow(
+        desc='Create a unique list of src_links (should already be unique)')
 
-    betl.logStepStart('Remove original origin/target cols and dedupe', 1)
-    df.drop(['origin_node_original', 'target_node_original'],
-            axis=1,
-            inplace=True)
-    df.drop_duplicates(inplace=True)
-    betl.logStepEnd(df)
+    dfl.read(tableName='ods_src_links', dataLayer='STG')
 
-    betl.writeData(df, 'mrg_src_links', 'STG')
+    dfl.dropColumns(
+        dataset='ods_src_links',
+        colsToDrop=['origin_node_original', 'target_node_original'],
+        desc='Drop the origin/target original node names')
 
-    del df
+    dfl.dedupe(dataset='ods_src_links',
+               desc='Make src_links unique (should already be unique)')
+
+    dfl.write(
+        dataset='ods_src_links',
+        targetTableName='mrg_src_links',
+        dataLayerID='STG')
+
+    dfl.close()

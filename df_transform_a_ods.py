@@ -2,111 +2,121 @@ import betl
 import pandas as pd
 
 
+#########################
+# DATA PROCESSING FUNCS #
+#########################
+
 def loadCompaniesToODS(scheduler):
 
-    # Load all the companies out of the companies table
+    dfl = betl.DataFlow(
+        desc='Extract companies from src_ipa_companies, and shareholder ' +
+             'companies from src_ipa_shareholders. Clean them up, union ' +
+             'them together, and output to ods_companies')
 
-    df_c = betl.readData('src_ipa_companies', 'SRC')
+    dfl.read(tableName='src_ipa_companies', dataLayer='SRC')
 
-    betl.logStepStart('Drop all cols except name and number', 1)
-    cols_to_drop = list(df_c)
-    cols_to_drop.remove('company_number')
-    cols_to_drop.remove('company_name')
-    df_c.drop(cols_to_drop, axis=1, inplace=True)
-    betl.logStepEnd(df_c)
+    dfl.dropColumns(
+        dataset='src_ipa_companies',
+        colsToKeep=['company_number', 'company_name'],
+        desc='Drop all cols except name and number')
 
-    betl.logStepStart('Rename company_name to company_name_original', 2)
-    df_c.rename(index=str,
-                columns={'company_name': 'company_name_original'},
-                inplace=True)
-    betl.logStepEnd(df_c)
+    dfl.renameColumns(
+        dataset='src_ipa_companies',
+        columns={'company_name': 'company_name_original'},
+        desc='Rename company_name to company_name_original')
 
-    betl.logStepStart('Add additional (blank) cols to match sh rows', 3)
-    df_c['appointment_date'] = None
-    df_c['ceased'] = None
-    df_c['company_shares_held_name_original'] = None
-    df_c['company_shares_held_name_cleaned'] = None
-    df_c['company_shares_held_number'] = None
-    df_c['is_shareholder'] = 'NO'
-    betl.logStepEnd(df_c)
+    dfl.addColumns(
+        dataset='src_ipa_companies',
+        columns={
+            'appointment_date': None,
+            'ceased': None,
+            'company_shares_held_name_original': None,
+            'company_shares_held_name_cleaned': None,
+            'company_shares_held_number': None,
+            'is_shareholder': 'No'},
+        desc='Add additional (blank) cols to match sh rows')
 
-    # Load the companies that are shareholders out of the shareholders table
+    dfl.read('src_ipa_shareholders', 'SRC')
 
-    df_sh = betl.readData('src_ipa_shareholders', 'SRC')
+    dfl.filter(
+        dataset='src_ipa_shareholders',
+        filters={'is_company': '1'},
+        desc='Filter company shareholders')
 
-    betl.logStepStart('Filter to is_company == 1', 4)
-    df_sh = df_sh.loc[df_sh['is_company'] == '1']
-    betl.logStepEnd(df_sh)
+    dfl.dropColumns(
+        dataset='src_ipa_shareholders',
+        colsToKeep=[
+            'name',
+            'shareholder_company_number',
+            'appointed',
+            'ceased',
+            'company_name',
+            'company_number'],
+        desc='Drop cols to make datasets compatible')
 
-    betl.logStepStart('Add is_shareholder col', 5)
-    df_sh['is_shareholder'] = 'YES'
-    betl.logStepEnd(df_sh)
+    dfl.addColumns(
+        dataset='src_ipa_shareholders',
+        columns={'is_shareholder': 'YES',
+                 'company_shares_held_name_cleaned': None},
+        desc='Add is_shareholder and name_cleaned cols')
 
-    betl.logStepStart('Drop cols to make datasets compatible', 6)
-    cols_to_drop = list(df_sh)
-    cols_to_drop.remove('name')
-    cols_to_drop.remove('shareholding_company_number')
-    cols_to_drop.remove('appointed')
-    cols_to_drop.remove('ceased')
-    cols_to_drop.remove('company_name')
-    cols_to_drop.remove('company_number')
-    cols_to_drop.remove('is_shareholder')
-    df_sh.drop(cols_to_drop, axis=1, inplace=True)
-    betl.logStepEnd(df_sh)
+    dfl.renameColumns(
+        dataset='src_ipa_shareholders',
+        columns={'name': 'company_name_original',
+                 'shareholding_company_number': 'company_number',
+                 'company_name': 'company_shares_held_name_original',
+                 'company_number': 'company_shares_held_number',
+                 'appointed': 'appointment_date'},
+        desc='Rename cols')
 
-    betl.logStepStart('Rename cols', 7)
-    df_sh.rename(index=str,
-                 columns={'name': 'company_name_original',
-                          'shareholding_company_number': 'company_number',
-                          'company_name': 'company_shares_held_name_original',
-                          'company_number': 'company_shares_held_number',
-                          'appointed': 'appointment_date'},
-                 inplace=True)
-    betl.logStepEnd(df_sh)
+    dfl.cleanColumn(
+        dataset='src_ipa_shareholders',
+        cleaningFunc=cleanCompanyName,
+        column='company_shares_held_name_original',
+        cleanedColumn='company_shares_held_name_cleaned',
+        desc='Add a clean company_name column for the shares_held_in company')
 
-    betl.logStepStart('Add column: company_shares_held_name_cleaned', 8)
-    df_sh = cleanCompanyName(df_sh,
-                             'company_shares_held_name_original',
-                             'company_shares_held_name_cleaned')
-    betl.logStepEnd(df_sh)
+    dfl.cleanColumn(
+        dataset='src_ipa_shareholders',
+        cleaningFunc=validateStringDates,
+        column='appointment_date',
+        desc='Convert appointment_date to Date and back to Str (YYYYMMDD),' +
+             ' remove NaNs')
 
-    betl.logStepStart('Convert dates to date types and back to string, ' +
-                      'in the format YYYYMMDD', 9)
-    df_sh['appointment_date'] = \
-        pd.to_datetime(df_sh['appointment_date'],
-                       errors='coerce').dt.strftime('%Y%m%d')
-    df_sh['ceased'] = \
-        pd.to_datetime(df_sh['ceased'],
-                       errors='coerce').dt.strftime('%Y%m%d')
-    df_sh['appointment_date'].replace('NaT', '', inplace=True)
-    df_sh['ceased'].replace('NaT', '', inplace=True)
-    betl.logStepEnd(df_sh)
+    dfl.cleanColumn(
+        dataset='src_ipa_shareholders',
+        cleaningFunc=validateStringDates,
+        column='ceased',
+        desc='Convert ceased date to Date and back to Str (YYYYMMDD),' +
+             ' remove NaNs')
 
-    betl.logStepStart('Concatentate the two datasets', 10)
-    df_both = pd.concat([df_c, df_sh])
-    betl.logStepEnd(df_both)
+    dfl.union(
+        datasets=['src_ipa_companies', 'src_ipa_shareholders'],
+        targetDataset='ods_companies',
+        desc='Union the two datasets')
 
-    del df_c
-    del df_sh
+    dfl.cleanColumn(
+        dataset='ods_companies',
+        cleaningFunc=cleanCompanyName,
+        column='company_name_original',
+        cleanedColumn='company_name_cleaned',
+        desc="Add a cleaned company_name column for the node's company name")
 
-    betl.logStepStart('Add column: company_name_cleaned', 11)
-    df_both = cleanCompanyName(df_both,
-                               'company_name_original',
-                               'company_name_cleaned')
-    betl.logStepEnd(df_both)
+    dfl.write(
+        dataset='ods_companies',
+        targetTableName='ods_companies',
+        dataLayerID='STG')
 
-    betl.writeData(df_both, 'ods_companies', 'STG')
-
-    del df_both
+    dfl.close()
 
 
 def loadPeopleToODS(scheduler):
 
-    # We have people in directors, shareholders, and secretaries source tables,
-    # So need to get them all into one dataset
+    dfl = betl.DataFlow(
+        desc='Extract people from src_ipa_directors, _shareholders & ' +
+             '_secretaries, combine into a single dataset and clean up a bit')
 
-    #  Our target list of columns, common across all three datasets:
-    cols = [
+    trgCols = [
         'name',
         'company_name',
         'appointment_date',
@@ -116,412 +126,647 @@ def loadPeopleToODS(scheduler):
         'nationality',
         'role_type']
 
-    # Get the directors
-    df_d = betl.readData('src_ipa_directors', 'SRC')
+    # DIRECTORS
 
-    betl.logStepStart('Add column: src_table', 1)
-    df_d['src_table'] = 'DIRECTORS'
-    betl.logStepEnd(df_d)
+    dfl.read(tableName='src_ipa_directors', dataLayer='SRC')
 
-    betl.logStepStart('Drop cols to make datasets compatible (directors)', 2)
-    cols_to_drop = [
-        'company_number',
-        'this_person_has_consented_to_act_as_a_director_for_this_company']
-    df_d.drop(cols_to_drop, axis=1, inplace=True)
-    betl.logStepEnd(df_d)
+    dfl.addColumns(
+        dataset='src_ipa_directors',
+        columns={'role_type': 'DIRECTOR'},
+        desc='Add column indicating the role')
 
-    betl.logStepStart('Assign role_type: DIRECTOR', 3)
-    df_d['role_type'] = 'DIRECTOR'
-    df_d = df_d[cols]
-    betl.logStepEnd(df_d)
+    dfl.dropColumns(
+        dataset='src_ipa_directors',
+        colsToKeep=trgCols,
+        desc='Drop cols to make datasets compatible')
 
-    # Get the shareholders
+    dfl.sortColumns(
+        dataset='src_ipa_directors',
+        colList=trgCols,
+        desc='Sort columns ready for union')
 
-    df_sh = betl.readData('src_ipa_shareholders', 'SRC')
+    # SHAREHOLDERS
 
-    betl.logStepStart('Filter to is_company == 0', 3)
-    df_sh = df_sh.loc[df_sh['is_company'] == '0']
-    betl.logStepEnd(df_sh)
+    dfl.read(tableName='src_ipa_shareholders', dataLayer='SRC')
 
-    betl.logStepStart('Add column: src_table', 4)
-    df_sh['src_table'] = 'SHAREHOLDERS'
-    betl.logStepEnd(df_sh)
+    dfl.filter(
+        dataset='src_ipa_shareholders',
+        filters={'is_company': '0'},
+        desc='Filter to human shareholders')
 
-    betl.logStepStart('Drop cols to make datasets compatible (shareholder)', 5)
-    cols_to_drop = [
-        'company_number',
-        'shareholder_is_also_a_director',
-        'residential_or_registered_office_address',
-        'this_person_has_consented_to_act_as_a_shareholder_for_this_company',
-        'shareholding_company_number',
-        'is_company',
-        'place_of_incorporation',
-        'this_company_has_consented_to_act_as_a_shareholder_for_this_company',
-        'this_entity_has_consented_to_act_as_a_shareholder_for_this_company',
-        'company_name_or_number',
-        'this_person_has_consented_to_act_as_a_director_for_this_company',
-        'appointment_date']
-    df_sh.drop(cols_to_drop, axis=1, inplace=True)
-    betl.logStepEnd(df_sh)
+    dfl.addColumns(
+        dataset='src_ipa_shareholders',
+        columns={'role_type': 'SHAREHOLDER'},
+        desc='Add column indicating the role')
 
-    betl.logStepStart('Rename appointed to appointment_date', 6)
-    df_sh.rename(index=str,
-                 columns={'appointed': 'appointment_date'},
-                 inplace=True)
-    betl.logStepEnd(df_sh)
+    dfl.dropColumns(
+        dataset='src_ipa_shareholders',
+        colsToDrop=['appointment_date'],
+        desc='Drop the appointment_date column (we will use the appointed ' +
+             'col instead)')
 
-    betl.logStepStart('Assign role_type: SHAREHOLDER', 7)
-    df_sh['role_type'] = 'SHAREHOLDER'
-    df_sh = df_sh[cols]
-    betl.logStepEnd(df_sh)
+    dfl.renameColumns(
+        dataset='src_ipa_shareholders',
+        columns={'appointed': 'appointment_date'},
+        desc='Rename appointed to appointment_date')
 
-    # Get the secretaries
+    dfl.dropColumns(
+        dataset='src_ipa_shareholders',
+        colsToKeep=trgCols,
+        desc='Drop cols to make datasets compatible')
 
-    df_s = betl.readData('src_ipa_secretaries', 'SRC')
+    dfl.sortColumns(
+        dataset='src_ipa_shareholders',
+        colList=trgCols,
+        desc='Sort columns ready for union')
 
-    betl.logStepStart('Add column: src_table', 8)
-    df_s['src_table'] = 'SECRETARIES'
-    betl.logStepEnd(df_s)
+    # SECRETARIES
 
-    betl.logStepStart('Drop cols to make datasets compatible (secretaries)', 9)
-    cols_to_drop = [
-        'company_number',
-        'this_person_has_consented_to_act_as_a_secretary_for_this_company',
-        'appointed',
-        'appointment_date',
-        'this_person_has_consented_to_act_as_a_director_for_this_company',
-        'this_person_has_consented_to_act_as_a_shareholder_for_this_company',
-        'residential_or_registered_office_address']
-    df_s.drop(cols_to_drop, axis=1, inplace=True)
-    betl.logStepEnd(df_s)
+    dfl.read(tableName='src_ipa_secretaries', dataLayer='SRC')
 
-    betl.logStepStart('Rename appointed_date to appointment_date', 10)
-    df_s.rename(index=str,
-                columns={'appointed_date': 'appointment_date'},
-                inplace=True)
-    betl.logStepEnd(df_s)
+    dfl.addColumns(
+        dataset='src_ipa_secretaries',
+        columns={'role_type': 'SECRETARY'},
+        desc='Add column indicating the role')
 
-    betl.logStepStart('Assign role_type: SECRETARY', 11)
-    df_s['role_type'] = 'SECRETARY'
-    df_s = df_s[cols]
-    betl.logStepEnd(df_s)
+    dfl.dropColumns(
+        dataset='src_ipa_secretaries',
+        colsToDrop=['appointment_date'],
+        desc='Drop the appointment_date column (we will use the appointed ' +
+             'col instead)')
 
-    # Concatenate the three datasets
+    dfl.renameColumns(
+        dataset='src_ipa_secretaries',
+        columns={'appointed_date': 'appointment_date'},
+        desc='Rename appointed_date to appointment_date')
 
-    betl.logStepStart('Concatentate the three datasets', 12)
-    df_p = pd.concat([df_d, df_sh, df_s])
-    betl.logStepEnd(df_p)
+    dfl.dropColumns(
+        dataset='src_ipa_secretaries',
+        colsToKeep=trgCols,
+        desc='Drop cols to make datasets compatible')
 
-    del [df_d, df_sh, df_s]
+    dfl.sortColumns(
+        dataset='src_ipa_secretaries',
+        colList=trgCols,
+        desc='Sort columns ready for union')
 
-    # name and company_name are our node NKs, so we need to clean them to
-    # ensure we treat different variations of the same name as the same node
+    # ODS_PEOPLE
 
-    betl.logStepStart('Rename column: name to person_name_original', 14)
-    df_p.rename(index=str,
-                columns={'name': 'person_name_original'},
-                inplace=True)
-    betl.logStepEnd(df_p)
+    dfl.union(
+        datasets=[
+            'src_ipa_directors',
+            'src_ipa_shareholders',
+            'src_ipa_secretaries'],
+        targetDataset='ods_people',
+        desc='Union the three datasets')
 
-    betl.logStepStart('Add column: person_name_cleaned', 13)
-    df_p = cleanPersonName(df_p, 'person_name_original', 'person_name_cleaned')
-    betl.logStepEnd(df_p)
+    dfl.renameColumns(
+        dataset='ods_people',
+        columns={'name': 'person_name_original',
+                 'company_name': 'company_name_original'},
+        desc='Rename name cols to _name_original')
 
-    betl.logStepStart(
-        'Rename column: company_name to company_name_original', 16)
-    df_p.rename(index=str,
-                columns={'company_name': 'company_name_original'},
-                inplace=True)
-    betl.logStepEnd(df_p)
+    dfl.cleanColumn(
+        dataset='ods_people',
+        cleaningFunc=cleanPersonName,
+        column='person_name_original',
+        cleanedColumn='person_name_cleaned',
+        desc='person_name is one or our node NKs, so we need to clean ' +
+             'it to ensure we treat different variations of the same name ' +
+             'as the same node')
 
-    betl.logStepStart('Add column: company_name_cleaned', 15)
-    df_p = cleanCompanyName(df_p,
-                            'company_name_original',
-                            'company_name_cleaned')
-    betl.logStepEnd(df_p)
+    dfl.cleanColumn(
+        dataset='ods_people',
+        cleaningFunc=cleanCompanyName,
+        column='company_name_original',
+        cleanedColumn='company_name_cleaned',
+        desc='company_name is one of our node NKs, so we need to clean ' +
+             'it to ensure we treat different variations of the same name ' +
+             'as the same node')
 
-    betl.logStepStart('Convert dates to date types and back to string, ' +
-                      'in the format YYYYMMDD', 14)
-    df_p['appointment_date'] = \
-        pd.to_datetime(df_p['appointment_date'],
-                       errors='coerce').dt.strftime('%Y%m%d')
-    df_p['ceased'] = \
-        pd.to_datetime(df_p['ceased'],
-                       errors='coerce').dt.strftime('%Y%m%d')
-    df_p['appointment_date'].replace('NaT', '', inplace=True)
-    df_p['ceased'].replace('NaT', '', inplace=True)
-    betl.logStepEnd(df_p)
+    dfl.cleanColumn(
+        dataset='ods_people',
+        cleaningFunc=validateStringDates,
+        column='appointment_date',
+        desc='Convert appointment_date to Date and back to Str (YYYYMMDD),' +
+             ' remove NaNs')
 
-    # Write to file
-    betl.writeData(df_p, 'ods_people', 'STG')
+    dfl.cleanColumn(
+        dataset='ods_people',
+        cleaningFunc=validateStringDates,
+        column='appointment_date',
+        desc='Convert ceased to Date and back to Str (YYYYMMDD),' +
+             ' remove NaNs')
 
-    del df_p
+    dfl.write(
+        dataset='ods_people',
+        targetTableName='ods_people',
+        dataLayerID='STG')
+
+    dfl.close()
 
 
 def loadAddressesToODS(scheduler):
 
-    # We have addresses in the addresses table (company addresses),
-    # and in directors, shareholders, and scretaries (people addresses)
-    # There's no natural key - just the address text
+    dfl = betl.DataFlow(
+        desc='Extract addresses from src_ipa_addresses (these are company ' +
+             'addresses), and the directors/shareholders/seretaries tables ' +
+             '(these are people addresses)')
 
-    # Get the company addresses
+    # COMPANY ADDRESSES
 
-    df_c_a = betl.readData('src_ipa_addresses', 'SRC')
+    dfl.read(tableName='src_ipa_addresses', dataLayer='SRC')
 
-    betl.logStepStart('Add column: src_table', 1)
-    df_c_a['src_table'] = 'ADDRESSES'
-    betl.logStepEnd(df_c_a)
+    # company_name,
+    # company_number,
+    # address_type,
+    # address,
+    # start_date,
+    # end_date
 
-    # Get the directors' addresses
+    dfl.renameColumns(
+        dataset='src_ipa_addresses',
+        columns={'address': 'address_original'},
+        desc='Rename address to address_original')
 
-    df_d = betl.readData('src_ipa_directors', 'SRC')
+    dfl.addColumns(
+        dataset='src_ipa_addresses',
+        columns={'src_table': 'ADDRESSES'},
+        desc='Add column to indicate source table for these rows')
 
-    betl.logStepStart('Concat the two directors'' addresses together', 2)
-    df_d_a_r = df_d['residential_address'].to_frame()
-    df_d_a_r.rename(index=str,
-                    columns={'residential_address': 'address'},
-                    inplace=True)
-    df_d_a_p = df_d['postal_address'].to_frame()
-    df_d_a_p.rename(index=str,
-                    columns={'postal_address': 'address'},
-                    inplace=True)
-    df_d_a = pd.concat([df_d_a_r, df_d_a_p])
-    betl.logStepEnd(df_d_a)
+    # DIRECTOR'S ADDRSSES
 
-    del [df_d_a_r, df_d_a_p]
+    dfl.read(tableName='src_ipa_directors', dataLayer='SRC')
 
-    betl.logStepStart('Add column: src_table', 3)
-    df_d_a['src_table'] = 'DIRECTORS'
-    betl.logStepEnd(df_d)
+    # company_name,
+    # company_number,
+    # appointment_date,
+    # name,
+    # residential_address,
+    # postal_address,
+    # nationality,
+    # this_person_has_consented_to_act_as_a_director_for_this_company,
+    # ceased
 
-    # Get the shareholders' addresses
+    dfl.dropColumns(
+        dataset='src_ipa_directors',
+        colsToDrop=[
+            'name',
+            'nationality',
+            'this_person_has_consented_to_act_as_a_director_for_this_company'],
+        desc='Drop unneeded columns')
 
-    df_sh = betl.readData('src_ipa_shareholders', 'SRC')
+    dfl.renameColumns(
+        dataset='src_ipa_directors',
+        columns={
+            'appointment_date': 'start_date',
+            'ceased': 'end_date'},
+        desc='Rename date columns')
 
-    betl.logStepStart('Concat the two shareholders'' addresses together', 4)
-    df_sh_a_r = df_sh['residential_address'].to_frame()
-    df_sh_a_r.rename(index=str,
-                     columns={'residential_address': 'address'},
-                     inplace=True)
-    df_sh_a_p = df_sh['postal_address'].to_frame()
-    df_sh_a_p.rename(index=str,
-                     columns={'postal_address': 'address'},
-                     inplace=True)
-    df_sh_a = pd.concat([df_sh_a_r, df_sh_a_p])
-    betl.logStepEnd(df_sh_a)
+    dfl.duplicateDataset(
+        dataset='src_ipa_directors',
+        targetDatasets=[
+            'director_residential_addresses',
+            'director_postal_addresses'],
+        desc='Duplicate into two datasets, ready to union')
 
-    del [df_sh_a_r, df_sh_a_p]
+    dfl.dropColumns(
+        dataset='director_residential_addresses',
+        colsToDrop=['postal_address'],
+        desc='Drop the postal address from the residential table')
 
-    betl.logStepStart('Add column: src_table', 5)
-    df_d_a['src_table'] = 'SHAREHOLDERS'
-    betl.logStepEnd(df_d)
+    dfl.renameColumns(
+        dataset='director_residential_addresses',
+        columns={'residential_address': 'address_original'},
+        desc='Rename residential_address to address_original')
 
-    # Get the secretaries' addresses
+    dfl.dropColumns(
+        dataset='director_postal_addresses',
+        colsToDrop=['residential_address'],
+        desc='Drop the residential address from the postal table')
 
-    df_s = betl.readData('src_ipa_secretaries', 'SRC')
+    dfl.renameColumns(
+        dataset='director_postal_addresses',
+        columns={'postal_address': 'address_original'},
+        desc='Rename postal_address to address_original')
 
-    betl.logStepStart('Concat the two shareholders'' addresses together', 6)
-    df_s_a_r = df_s['residential_address'].to_frame()
-    df_s_a_r.rename(index=str,
-                    columns={'residential_address': 'address'},
-                    inplace=True)
-    df_s_a_p = df_s['postal_address'].to_frame()
-    df_s_a_p.rename(index=str,
-                    columns={'postal_address': 'address'},
-                    inplace=True)
-    df_s_a = pd.concat([df_s_a_r, df_s_a_p])
-    betl.logStepEnd(df_s_a)
+    dfl.union(
+        datasets=[
+            'director_residential_addresses',
+            'director_postal_addresses'],
+        targetDataset='director_addresses',
+        desc='Union the two directors address cols into a single dataset')
 
-    del [df_s_a_r, df_s_a_p]
+    dfl.addColumns(
+        dataset='director_addresses',
+        columns={'src_table': 'DIRECTORS'},
+        desc='Add column to indicate source table for these rows')
 
-    betl.logStepStart('Add column: src_table', 7)
-    df_s['src_table'] = 'SECRETARIES'
-    betl.logStepEnd(df_s)
+    # SHAREHOLDERS
 
-    # Concat all four dfs together
+    dfl.read(tableName='src_ipa_shareholders', dataLayer='SRC')
 
-    betl.logStepStart('Concat all four dfs together', 8)
-    df_a = pd.concat([df_c_a, df_d_a, df_sh_a, df_s_a])
-    betl.logStepEnd(df_a)
+    # company_name,
+    # company_number,
+    # shareholder_is_also_a_director,
+    # residential_or_registered_office_address,
+    # postal_address,
+    # nationality,
+    # this_person_has_consented_to_act_as_a_shareholder_for_this_company,
+    # appointed,
+    # name,
+    # shareholding_company_number,
+    # is_company,
+    # place_of_incorporation,
+    # this_company_has_consented_to_act_as_a_shareholder_for_this_company,
+    # this_entity_has_consented_to_act_as_a_shareholder_for_this_company,
+    # ceased,
+    # company_name_or_number,
+    # residential_address,
+    # this_person_has_consented_to_act_as_a_director_for_this_company,
+    # appointment_date,
 
-    del [df_c_a, df_d_a, df_sh_a, df_s_a]
+    dfl.dropColumns(
+        dataset='src_ipa_shareholders',
+        colsToKeep=[
+            'company_name',
+            'company_number',
+            'appointed',
+            'ceased',
+            'residential_address',
+            'postal_address'],
+        desc='Drop unneeded columns')
 
-    # Add cleaned address column
+    dfl.renameColumns(
+        dataset='src_ipa_shareholders',
+        columns={
+            'appointed': 'start_date',
+            'ceased': 'end_date'},
+        desc='Rename date columns')
 
-    betl.logStepStart('Add column: address_cleaned', 9)
-    df_a['address_cleaned'] = df_a['address'].str[0:]
-    betl.logStepEnd(df_a)
+    dfl.duplicateDataset(
+        dataset='src_ipa_shareholders',
+        targetDatasets=[
+            'shareholders_residential_addresses',
+            'shareholders_postal_addresses'],
+        desc='Duplicate into two datasets, ready to union')
 
-    betl.logStepStart('Rename column: address to address_original', 10)
-    df_a.rename(index=str,
-                columns={'address': 'address_original'},
-                inplace=True)
-    betl.logStepEnd(df_a)
+    dfl.dropColumns(
+        dataset='shareholders_residential_addresses',
+        colsToDrop=['postal_address'],
+        desc='Drop the postal address from the residential table')
 
-    # Write to file
+    dfl.renameColumns(
+        dataset='shareholders_residential_addresses',
+        columns={'residential_address': 'address_original'},
+        desc='Rename residential_address to address_original')
 
-    betl.writeData(df_a, 'ods_addresses', 'STG')
+    dfl.dropColumns(
+        dataset='shareholders_postal_addresses',
+        colsToDrop=['residential_address'],
+        desc='Drop the residential address from the postal table')
 
-    del df_a
+    dfl.renameColumns(
+        dataset='shareholders_postal_addresses',
+        columns={'postal_address': 'address_original'},
+        desc='Rename postal_address to address_original')
+
+    dfl.union(
+        datasets=[
+            'shareholders_residential_addresses',
+            'shareholders_postal_addresses'],
+        targetDataset='shareholder_addresses',
+        desc='Union the two shareholder address cols into a single dataset')
+
+    dfl.addColumns(
+        dataset='shareholder_addresses',
+        columns={'src_table': 'SHAREHOLDERS'},
+        desc='Add column to indicate source table for these rows')
+
+    # SECRETARIES
+
+    dfl.read(tableName='src_ipa_secretaries', dataLayer='SRC')
+
+    # company_name,
+    # company_number,
+    # appointment_date,
+    # name,
+    # residential_address,
+    # postal_address,
+    # nationality,
+    # this_person_has_consented_to_act_as_a_secretary_for_this_company,
+    # appointed_date,
+    # ceased,
+    # this_person_has_consented_to_act_as_a_director_for_this_company,
+    # residential_or_registered_office_address,
+    # this_person_has_consented_to_act_as_a_shareholder_for_this_company,
+    # appointed,
+
+    dfl.dropColumns(
+        dataset='src_ipa_secretaries',
+        colsToKeep=[
+            'company_name',
+            'company_number',
+            'appointed',
+            'ceased',
+            'residential_address',
+            'postal_address'],
+        desc='Drop unneeded columns')
+
+    dfl.renameColumns(
+        dataset='src_ipa_secretaries',
+        columns={
+            'appointed': 'start_date',
+            'ceased': 'end_date'},
+        desc='Rename date columns')
+
+    dfl.duplicateDataset(
+        dataset='src_ipa_secretaries',
+        targetDatasets=[
+            'secretaries_residential_addresses',
+            'secretaries_postal_addresses'],
+        desc='Duplicate into two datasets, ready to union')
+
+    dfl.dropColumns(
+        dataset='secretaries_residential_addresses',
+        colsToDrop=['postal_address'],
+        desc='Drop the postal address from the residential table')
+
+    dfl.renameColumns(
+        dataset='secretaries_residential_addresses',
+        columns={'residential_address': 'address_original'},
+        desc='Rename residential_address to address_original')
+
+    dfl.dropColumns(
+        dataset='secretaries_postal_addresses',
+        colsToDrop=['residential_address'],
+        desc='Drop the residential address from the postal table')
+
+    dfl.renameColumns(
+        dataset='secretaries_postal_addresses',
+        columns={'postal_address': 'address_original'},
+        desc='Rename postal_address to address_original')
+
+    dfl.union(
+        datasets=[
+            'secretaries_residential_addresses',
+            'secretaries_postal_addresses'],
+        targetDataset='secretary_addresses',
+        desc='Union the two secretary address cols into a single dataset')
+
+    dfl.addColumns(
+        dataset='secretary_addresses',
+        columns={'src_table': 'SECRETARIES'},
+        desc='Add column to indicate source table for these rows')
+
+    # ODS_ADDRESSES
+
+    # address_original
+    # address_cleaned
+    # address_type
+    # start_date
+    # end_date
+    # company_name
+    # company_number
+    # src_table
+
+    dfl.union(
+        datasets=[
+            'src_ipa_addresses',
+            'director_addresses',
+            'shareholder_addresses',
+            'secretary_addresses'],
+        targetDataset='ods_addresses',
+        desc='Union the four datasets')
+
+    dfl.cleanColumn(
+        dataset='ods_addresses',
+        cleaningFunc=cleanAddress,
+        column='address_original',
+        cleanedColumn='address_cleaned',
+        desc="Clean the addresses")
+
+    dfl.write(
+        dataset='ods_addresses',
+        targetTableName='ods_addresses',
+        dataLayerID='STG')
+
+    dfl.close()
 
 
 def loadPostsToODS(scheduler):
-    df_p = betl.readData('src_wp_documents', 'SRC')
 
-    betl.logStepStart('Drop unneeded column and rename the rest', 1)
-    df_p.drop(['src_id', 'post_id'], axis=1, inplace=True)
-    df_p.rename(index=str,
-                columns={'id_src': 'nk_post_id',
-                         'post_content': 'corruption_doc_content',
-                         'post_name': 'corruption_doc_name',
-                         'post_date': 'corruption_doc_date',
-                         'post_title': 'corruption_doc_title',
-                         'post_status': 'post_status',
-                         'post_type': 'post_type'},
-                inplace=True)
-    betl.logStepEnd(df_p)
+    dfl = betl.DataFlow(desc='Extract posts and load to ods')
 
-    # It appears we have multiple copies of some of the posts (versions?)
-    betl.logStepStart('Remove duplicates', 2)
-    df_p.drop_duplicates(inplace=True)
-    betl.logStepEnd(df_p)
+    dfl.read(tableName='src_wp_documents', dataLayer='SRC')
 
-    betl.logStepStart('Create two additional column and reorder', 3)
-    df_p['corruption_doc_status'] = df_p['post_status']
+    dfl.dropColumns(
+        dataset='src_wp_documents',
+        colsToDrop=[
+            'src_id',
+            'post_id',
+            'page_content_vector',
+            'is_new'],
+        desc='Drop unneeded columns')
 
-    df_p = cleanPostContent(
-        df_p,
-        'corruption_doc_content',
-        'corruption_doc_content_cleaned')
+    dfl.renameColumns(
+        dataset='src_wp_documents',
+        columns={'id_src': 'nk_post_id',
+                 'post_content': 'corruption_doc_content',
+                 'post_name': 'corruption_doc_name',
+                 'post_date': 'corruption_doc_date',
+                 'post_title': 'corruption_doc_title',
+                 'post_status': 'post_status',
+                 'post_type': 'post_type'},
+        desc='Rename columns ("post_" -> "corruption_")')
 
-    cols = ['nk_post_id',
-            'corruption_doc_content',
-            'corruption_doc_content_cleaned',
-            'corruption_doc_name',
-            'corruption_doc_date',
-            'corruption_doc_title',
-            'corruption_doc_status',
-            'post_status',
-            'post_type']
-    df_p = df_p[cols]
-    betl.logStepEnd(df_p)
+    dfl.dedupe(dataset='src_wp_documents',
+               desc='Remove multiple copies of the same posts (WordPress ' +
+                    'post versions, perhaps?)')
 
-    betl.writeData(df_p, 'ods_posts', 'STG')
+    dfl.addColumns(
+        dataset='src_wp_documents',
+        columns={
+            'corruption_doc_status': dfl.getColumn(
+                                        dataset='src_wp_documents',
+                                        columnName='post_status')},
+        desc='Create a corruption_doc_status, preserving the original post ' +
+             'status')
 
-    del df_p
+    dfl.cleanColumn(
+        dataset='src_wp_documents',
+        cleaningFunc=cleanPostContent,
+        column='corruption_doc_content',
+        cleanedColumn='corruption_doc_content_cleaned',
+        desc="Clean the post content")
+
+    dfl.write(
+        dataset='src_wp_documents',
+        targetTableName='ods_posts',
+        dataLayerID='STG')
+
+    dfl.close()
 
 
 def loadSrcLinksToODS(scheduler):
 
-    # Start with all the people that are shareholders/directors/secretaries
-    # from ods_people
+    dfl = betl.DataFlow(
+        desc='Start with all the people that are shareholders/directors/' +
+             'secretaries from ods_people')
 
-    df_p = betl.readData('ods_people', 'STG')
+    # ODS_PEOPLE
 
-    betl.logStepStart('Drop columns', 1)
-    cols_to_drop = list(df_p.columns.values)
-    cols_to_drop.remove('person_name_original')
-    cols_to_drop.remove('person_name_cleaned')
-    cols_to_drop.remove('company_name_original')
-    cols_to_drop.remove('company_name_cleaned')
-    cols_to_drop.remove('appointment_date')
-    cols_to_drop.remove('ceased')
-    cols_to_drop.remove('role_type')
-    df_p.drop(cols_to_drop, axis=1, inplace=True)
-    betl.logStepEnd(df_p)
+    dfl.read(tableName='ods_people', dataLayer='STG')
 
-    betl.logStepStart('Rename columns', 2)
-    df_p.rename(index=str,
-                columns={
-                    'person_name_original': 'origin_node_original',
-                    'person_name_cleaned': 'origin_node_cleaned',
-                    'company_name_original': 'target_node_original',
-                    'company_name_cleaned': 'target_node_cleaned',
-                    'appointment_date': 'start_date',
-                    'ceased': 'end_date'
-                },
-                inplace=True)
-    betl.logStepEnd(df_p)
+    dfl.dropColumns(
+        dataset='ods_people',
+        colsToKeep=[
+            'person_name_original',
+            'person_name_cleaned',
+            'company_name_original',
+            'company_name_cleaned',
+            'appointment_date',
+            'ceased'],
+        desc='Drop cols to make datasets compatible')
 
-    betl.logStepStart('Add columns: link_type and relationship, remove ' +
-                      'role_type', 3)
-    df_p['link_type'] = 'P2C'
-    df_p['relationship'] = df_p.apply(setP2CRelationship, axis=1)
-    df_p.drop('role_type', axis=1, inplace=True)
-    betl.logStepEnd(df_p)
+    dfl.renameColumns(
+        dataset='ods_people',
+        columns={
+            'person_name_original': 'origin_node_original',
+            'person_name_cleaned': 'origin_node_cleaned',
+            'company_name_original': 'target_node_original',
+            'company_name_cleaned': 'target_node_cleaned',
+            'appointment_date': 'start_date',
+            'ceased': 'end_date'},
+        desc='Rename columns')
 
-    betl.logStepStart('Add origin/target node types', 4)
-    df_p['origin_node_type'] = 'person'
-    df_p['target_node_type'] = 'company'
-    betl.logStepEnd(df_p)
+    dfl.addColumns(
+        dataset='ods_people',
+        columns={'link_type': 'P2C',
+                 'origin_node_type': 'person',
+                 'target_node_type': 'company'},
+        desc='Set these as all Person2Company (P2C) link_type')
 
-    # Now get the companies that are shareholders from ods_companies
+    dfl.addColumns(
+        dataset='ods_people',
+        columns={'relationship': setP2CRelationship},
+        desc='Set the relationship for each link')
 
-    df_c = betl.readData('ods_companies', 'STG')
+    # COMPANY SHAREHOLDERS (ODS_COMPANIES)
 
-    betl.logStepStart('Filter to is_shareholder == YES', 5)
-    df_c = df_c.loc[df_c['is_shareholder'] == 'YES']
-    betl.logStepEnd(df_c)
+    dfl.read(tableName='ods_companies', dataLayer='STG')
 
-    betl.logStepStart('Drop columns', 6)
-    cols_to_drop = list(df_c.columns.values)
-    cols_to_drop.remove('company_name_original')
-    cols_to_drop.remove('company_name_cleaned')
-    cols_to_drop.remove('company_shares_held_name_original')
-    cols_to_drop.remove('company_shares_held_name_cleaned')
-    cols_to_drop.remove('appointment_date')
-    cols_to_drop.remove('ceased')
-    df_c.drop(cols_to_drop, axis=1, inplace=True)
-    betl.logStepEnd(df_c)
+    dfl.filter(
+        dataset='ods_companies',
+        filters={'is_shareholder': 'YES'},
+        desc='Filter to shareholder companies')
 
-    betl.logStepStart('Rename columns', 7)
-    df_c.rename(index=str,
-                columns={
-                   'company_name_original': 'origin_node_original',
-                   'company_name_cleaned': 'origin_node_cleaned',
-                   'company_shares_held_name_original': 'target_node_original',
-                   'company_shares_held_name_cleaned': 'target_node_cleaned',
-                   'appointment_date': 'start_date',
-                   'ceased': 'end_date',
-                },
-                inplace=True)
-    betl.logStepEnd(df_c)
+    dfl.dropColumns(
+        dataset='ods_companies',
+        colsToKeep=[
+            'company_name_original',
+            'company_name_cleaned',
+            'company_shares_held_name_original',
+            'company_shares_held_name_cleaned',
+            'appointment_date',
+            'ceased'],
+        desc='Drop cols')
 
-    betl.logStepStart('Add columns: link_type and relationship', 8)
-    df_c['link_type'] = 'C2C'
-    df_c['relationship'] = 'sh_of'
-    betl.logStepEnd(df_c)
+    dfl.renameColumns(
+        dataset='ods_companies',
+        columns={
+            'company_name_original': 'origin_node_original',
+            'company_name_cleaned': 'origin_node_cleaned',
+            'company_shares_held_name_original': 'target_node_original',
+            'company_shares_held_name_cleaned': 'target_node_cleaned',
+            'appointment_date': 'start_date',
+            'ceased': 'end_date'},
+        desc='Rename columns')
 
-    betl.logStepStart('Add origin/target node types', 9)
-    df_c['origin_node_type'] = 'company'
-    df_c['target_node_type'] = 'company'
-    betl.logStepEnd(df_c)
+    dfl.addColumns(
+        dataset='ods_companies',
+        columns={
+            'link_type': 'C2C',
+            'relationship': 'sh_of',
+            'origin_node_type': 'company',
+            'target_node_type': 'company'},
+        desc='Add link_type (C2C) and relationship (sh_of) columns')
 
-    betl.logStepStart('Concatentate the two datasets', 10)
-    df_both = pd.concat([df_p, df_c])
-    betl.logStepEnd(df_both)
+    # ODS_SRC_LINKS
 
-    del df_p
-    del df_c
+    dfl.union(
+        datasets=[
+            'ods_people',
+            'ods_companies'],
+        targetDataset='ods_src_links',
+        desc='Union the two datasets')
 
-    betl.logStepStart('Reorder columns', 11)
-    cols = [
-        'origin_node_original',
-        'origin_node_cleaned',
-        'origin_node_type',
-        'target_node_original',
-        'target_node_cleaned',
-        'target_node_type',
-        'start_date',
-        'end_date',
-        'link_type',
-        'relationship']
-    df_both = df_both[cols]
-    betl.logStepEnd(df_both)
+    dfl.write(
+        dataset='ods_src_links',
+        targetTableName='ods_src_links',
+        dataLayerID='STG')
 
-    betl.writeData(df_both, 'ods_src_links', 'STG')
+    dfl.close()
 
-    del df_both
+
+#####################
+# UTILITY FUNCTIONS #
+#####################
+
+def cleanCompanyName(colToClean):
+
+    cleanCol = colToClean.str.upper()
+
+    # Replace double spaces with single
+    cleanCol.str.replace('\s+', ' ')
+
+    return cleanCol
+
+
+def cleanPersonName(colToClean):
+
+    cleanCol = colToClean.str.upper()
+
+    # Replace double spaces with single
+    cleanCol = cleanCol.str.replace('\s+', ' ')
+
+    # Replace back ticks with single quote
+    cleanCol = cleanCol.str.replace('`', "'")
+
+    # Replace &#8217; (apostrophe) with single quote
+    cleanCol = cleanCol.str.replace('&#8217;', "'")
+
+    return cleanCol
+
+
+def cleanAddress(colToClean):
+
+    # TODO: Fairly sure there's more to this!
+    cleanCol = colToClean.str[0:]
+
+    return cleanCol
+
+
+def cleanPostContent(colToClean):
+
+    cleanCol = colToClean.str.upper()
+
+    # Remove line breaks
+    cleanCol = cleanCol.str.replace('\n', ' ')
+    cleanCol = cleanCol.str.replace('\r', ' ')
+
+    # Replace back ticks with single quote
+    cleanCol = cleanCol.str.replace('`', "'")
+
+    # Replace &#8217; (apostrophe) with single quote
+    cleanCol = cleanCol.str.replace('&#8217;', "'")
+
+    return cleanCol
+
+
+def validateStringDates(dateCol):
+    col = pd.to_datetime(dateCol, errors='coerce').dt.strftime('%Y%m%d')
+    col.replace('NaT', '', inplace=True)
 
 
 def setP2CRelationship(row):
@@ -531,43 +776,3 @@ def setP2CRelationship(row):
         return 'sh_of'
     elif row['role_type'] == 'SECRETARY':
         return 's_of'
-
-
-def cleanPersonName(df, colToClean, targetCol):
-    df[targetCol] = df[colToClean].str.upper()
-    # Replace double spaces with single
-    df[targetCol] = \
-        df[targetCol].str.replace('\s+', ' ')
-    # Replace back ticks with single quote
-    df[targetCol] = \
-        df[targetCol].str.replace('`', "'")
-    # Replace &#8217; (apostrophe) with single quote
-    df[targetCol] = \
-        df[targetCol].str.replace('&#8217;', "'")
-    return df
-
-
-def cleanCompanyName(df, colToClean, targetCol):
-    df[targetCol] = df[colToClean].str.upper()
-    # Replace double spaces with single
-    df[targetCol] = \
-        df[targetCol].str.replace('\s+', ' ')
-    return df
-
-
-def cleanPostContent(df, colToClean, targetCol):
-
-    df[targetCol] = df[colToClean].str.upper()
-    # Remove line break
-    df[targetCol] = \
-        df[targetCol].str.replace('\n', ' ')
-    df[targetCol] = \
-        df[targetCol].str.replace('\r', ' ')
-    # Replace back ticks with single quote
-    df[targetCol] = \
-        df[targetCol].str.replace('`', "'")
-    # Replace &#8217; (apostrophe) with single quote
-    df[targetCol] = \
-        df[targetCol].str.replace('&#8217;', "'")
-
-    return df

@@ -1,125 +1,218 @@
 import betl
-import pandas as pd
 
 
 def prepareDMLinkType(scheduler):
-    df = betl.readData('src_msd_dm_link_type', 'SRC')
-    betl.writeData(df, 'trg_dm_link_type', 'STG')
-    del df
+
+    dfl = betl.DataFlow(desc='Prep src_msd_dm_link_type data for default load')
+
+    dfl.read(tableName='src_msd_dm_link_type', dataLayer='SRC')
+
+    dfl.write(
+        dataset='src_msd_dm_link_type',
+        targetTableName='trg_dm_link_type',
+        dataLayerID='STG')
+
+    dfl.close()
 
 
 def prepareDMRelationship(scheduler):
-    df = betl.readData('src_msd_dm_relationship', 'SRC')
-    betl.writeData(df, 'trg_dm_relationship', 'STG')
-    del df
+
+    dfl = betl.DataFlow(desc='Prep src_msd_dm_relationship data for ' +
+                             'default load')
+
+    dfl.read(tableName='src_msd_dm_relationship', dataLayer='SRC')
+
+    dfl.write(
+        dataset='src_msd_dm_relationship',
+        targetTableName='trg_dm_relationship',
+        dataLayerID='STG')
+
+    dfl.close()
 
 
 def prepareDMNode(scheduler):
-    df_c = betl.readData('mrg_companies', 'STG')
 
-    betl.logStepStart('Company: rename column to name; add a node_type col', 1)
-    df_c.rename(index=str,
-                columns={'company_name_cleaned': 'name'},
-                inplace=True)
-    df_c['node_type'] = 'company'
-    betl.logStepEnd(df_c)
+    dfl = betl.DataFlow(desc='Prep dm_node data for default load')
 
-    df_p = betl.readData('mrg_people', 'STG')
+    dfl.read(tableName='mrg_companies', dataLayer='STG')
 
-    betl.logStepStart('Person: Rename column to name; add a node_type col', 2)
-    df_p.rename(index=str,
-                columns={'person_name_cleaned': 'name'},
-                inplace=True)
-    df_p['node_type'] = 'person'
-    betl.logStepEnd(df_p)
+    dfl.renameColumns(
+        dataset='mrg_companies',
+        columns={'company_name_cleaned': 'name'},
+        desc='Rename company_name_cleaned to name')
 
-    betl.logStepStart('Concat companies and people', 3)
-    df_n = pd.concat([df_p, df_c])
-    betl.logStepEnd(df_n)
+    dfl.addColumns(
+        dataset='mrg_companies',
+        columns={'node_type': 'company'},
+        desc='Add column: node_type = company')
 
-    del [df_p, df_c]
+    dfl.read(tableName='mrg_people', dataLayer='STG')
 
-    betl.logStepStart('Add alphnumeric node name col', 4)
-    df_n['name_alphanumeric'] = df_n['name'].str.replace('[^[:alnum:] ]', ' ')
-    betl.logStepEnd(df_n)
+    dfl.renameColumns(
+        dataset='mrg_people',
+        columns={'person_name_cleaned': 'name'},
+        desc='Rename person_name_cleaned to name')
 
-    betl.logStepStart('Add empty columns (to be populated later)', 5)
-    df_n['name_tsquery'] = None
-    df_n['is_mentioned_in_docs'] = None
-    df_n['mentions_count'] = None
-    betl.logStepEnd(df_n)
+    dfl.addColumns(
+        dataset='mrg_people',
+        columns={'node_type': 'person'},
+        desc='Add column: node_type = person')
 
-    betl.writeData(df_n, 'trg_dm_node', 'STG')
+    dfl.union(
+        datasets=['mrg_companies', 'mrg_people'],
+        targetDataset='trg_dm_node',
+        desc='Union the two datasets')
 
-    del df_n
+    dfl.cleanColumn(
+        dataset='trg_dm_node',
+        cleaningFunc=alphnumericName,
+        column='name',
+        cleanedColumn='name_alphanumeric',
+        desc="Create an alphanumeric-only name")
+
+    dfl.addColumns(
+        dataset='trg_dm_node',
+        columns={'name_tsquery': None,
+                 'is_mentioned_in_docs': None,
+                 'mentions_count': None},
+        desc='Add empty columns (to be populated later)')
+
+    dfl.write(
+        dataset='trg_dm_node',
+        targetTableName='trg_dm_node',
+        dataLayerID='STG')
+
+    dfl.close()
 
 
 def prepareDMCorruptionDoc(scheduler):
-    df = betl.readData('ods_posts', 'STG')
 
-    betl.logStepStart('Add alphnumeric content col', 1)
-    df['corruption_doc_content_alphanumeric'] = \
-        df['corruption_doc_content'].str.replace('[^[:alnum:] ]', ' ')
-    betl.logStepEnd(df)
+    dfl = betl.DataFlow(desc='Prep dm_corruption_doc data for default load')
 
-    betl.logStepStart('Add 4 columns: number_mentioned_*, and tsvector', 2)
-    df['number_mentioned_nodes'] = 0
-    df['number_mentioned_people'] = 0
-    df['number_mentioned_companies'] = 0
-    df['corruption_doc_tsvector'] = None
-    betl.logStepEnd(df)
+    dfl.read(tableName='ods_posts', dataLayer='STG')
 
-    betl.writeData(df, 'trg_dm_corruption_doc', 'STG')
+    dfl.cleanColumn(
+        dataset='ods_posts',
+        cleaningFunc=alphnumericName,
+        column='corruption_doc_content',
+        cleanedColumn='corruption_doc_content_alphanumeric',
+        desc="Create alphanumeric-only content")
 
-    del df
+    dfl.addColumns(
+        dataset='ods_posts',
+        columns={'number_mentioned_nodes': 0,
+                 'number_mentioned_people': 0,
+                 'number_mentioned_companies': 0,
+                 'corruption_doc_tsvector': None},
+        desc='Add 4 columns: number_mentioned_*, and tsvector, ' +
+             ' (to be populated later)')
+
+    dfl.write(
+        dataset='ods_posts',
+        targetTableName='trg_dm_corruption_doc',
+        dataLayerID='STG')
+
+    dfl.close()
 
 
 def prepareDMAddress(scheduler):
-    df = betl.readData('mrg_addresses', 'STG')
 
-    betl.logStepStart('Rename column: address to address_cleaned', 1)
-    df.rename(index=str,
-              columns={'address_cleaned': 'address'},
-              inplace=True)
-    betl.logStepEnd(df)
+    dfl = betl.DataFlow(desc='Prep dm_addresses data for default load')
 
-    betl.writeData(df, 'trg_dm_address', 'STG')
+    dfl.read(tableName='mrg_addresses', dataLayer='STG')
 
-    del df
+    dfl.renameColumns(
+        dataset='mrg_addresses',
+        columns={'address_cleaned': 'address'},
+        desc='Rename column: address to address_cleaned')
+
+    dfl.write(
+        dataset='mrg_addresses',
+        targetTableName='trg_dm_address',
+        dataLayerID='STG')
+
+    dfl.close()
 
 
 def prepareDMAddressType(scheduler):
-    # We have the address_types for people as
-    # MSD, and we add to it the address_types for companies
 
-    df_p_at = betl.readData('src_msd_dm_address_type', 'SRC')
-    df_c_a = betl.readData('ods_addresses', 'STG')
+    dfl = betl.DataFlow(
+        desc='Prep src_msd_dm_address_type and ods_addresses data for ' +
+             'default load of dm_address_type')
 
-    betl.logStepStart('Remove cols, rename, dedupe, add additional cols', 1)
-    cols = list(df_c_a.columns.values)
-    cols.remove('address_type')
-    df_c_a.drop(cols, axis=1, inplace=True)
-    df_c_a.drop_duplicates(inplace=True)
-    df_c_a['address_type_name'] = 'company: ' + df_c_a['address_type'].map(str)
-    df_c_a['address_role'] = 'Company'
-    cols = ['address_type_name',
-            'address_type',
-            'address_role']
-    df_c_a = df_c_a[cols]
-    betl.logStepEnd(df_c_a)
+    colList = ['address_type_name',
+               'address_type',
+               'address_role']
 
-    betl.logStepStart('Concatentate the two datasets', 2)
-    df_at = pd.concat([df_p_at, df_c_a])
-    betl.logStepEnd(df_at)
+    # ODS_ADDRESSES
 
-    del [df_p_at, df_c_a]
+    dfl.read(tableName='ods_addresses', dataLayer='STG')
 
-    betl.writeData(df_at, 'trg_dm_address_type', 'STG')
+    dfl.dropColumns(
+        dataset='ods_addresses',
+        colsToKeep=['address_type'],
+        desc='Drop all cols except address_type')
 
-    del df_at
+    dfl.dedupe(dataset='ods_addresses',
+               desc='Dedupe address_types')
+
+    dfl.addColumns(
+        dataset='ods_addresses',
+        columns={'address_role': 'Company',
+                 'address_type_name': addressTypeName},
+        desc='Add address_role column')
+
+    dfl.sortColumns(
+        dataset='ods_addresses',
+        colList=colList,
+        desc='Sort list ready for union')
+
+    # MSD ADDRESS_TYPE
+
+    dfl.read(tableName='src_msd_dm_address_type', dataLayer='SRC')
+
+    dfl.sortColumns(
+        dataset='src_msd_dm_address_type',
+        colList=colList,
+        desc='Sort list ready for union')
+
+    # TRG_DM_ADDRESS_TYPE
+
+    dfl.union(
+        datasets=['ods_addresses', 'src_msd_dm_address_type'],
+        targetDataset='trg_dm_address_type',
+        desc='Union the two datasets')
+
+    dfl.write(
+        dataset='trg_dm_address_type',
+        targetTableName='trg_dm_address_type',
+        dataLayerID='STG')
+
+    dfl.close()
 
 
 def prepareDMNetworkMetric(scheduler):
-    df = betl.readData('src_msd_dm_network_metric', 'SRC')
-    betl.writeData(df, 'trg_dm_network_metric', 'STG')
-    del df
+
+    dfl = betl.DataFlow(
+        desc='Prep src_msd_dm_network_metric data for default load')
+
+    dfl.read(tableName='src_msd_dm_network_metric', dataLayer='SRC')
+
+    dfl.write(
+        dataset='src_msd_dm_network_metric',
+        targetTableName='trg_dm_network_metric',
+        dataLayerID='STG')
+
+    dfl.close()
+
+
+####################
+# UTILITY FUNCTIONS #
+#####################
+
+def alphnumericName(colToClean):
+    return colToClean.str.replace('[^[:alnum:] ]', ' ')
+
+
+def addressTypeName(row):
+    return 'company: ' + row['address_type']
