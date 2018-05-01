@@ -1,55 +1,90 @@
 import betl
 import datetime
 
-
-def loadSrcLinksIntoTempFile(scheduler):
-    df = betl.readData('mrg_src_links', 'STG')
-    df['commonality_node_cleaned'] = None
-    df['commonality_node_type'] = None
-    betl.writeData(df, 'tmp_ft_links', 'STG')
+# TODO: having this as a global this breaks recovery mid-execution
+COL_LIST = None
 
 
 def generateLinks_C2P(scheduler):
 
-    df = betl.readData('mrg_src_links', 'STG')
-    cols = list(df)
+    global COL_LIST
 
-    betl.logStepStart('Rename cols to swap origin/target over and reorder', 1)
-    df.rename(index=str,
-              columns={
-                'origin_node_cleaned': 'target_node_cleaned',
-                'origin_node_type': 'target_node_type',
-                'target_node_cleaned': 'origin_node_cleaned',
-                'target_node_type': 'origin_node_type'},
-              inplace=True)
-    df = df[cols]
-    betl.logStepEnd(df)
+    dfl = betl.DataFlow(
+        desc='Generate the company-to-person (C2P) links by flipping the ' +
+             'P2C links')
 
-    betl.logStepStart('Set values of link_type and relationship', 2)
-    df['link_type'] = df.apply(setLinkType, axis=1)
-    df['relationship'] = df.apply(
-        lambda row: row.relationship.replace('of', 'by'), axis=1)
-    betl.logStepEnd(df)
+    dfl.read(tableName='mrg_src_links', dataLayer='STG')
 
-    betl.writeData(df, 'tmp_ft_links', 'STG', 'append')
+    dfl.addColumns(
+        dataset='mrg_src_links',
+        columns={
+            'commonality_node_cleaned': None,
+            'commonality_node_type': None},
+        desc='Add commonality node columns (to be populated later)')
 
+    COL_LIST = dfl.getColumnList('mrg_src_links')
 
-def setLinkType(row):
-    if row['link_type'] == 'P2C':
-        return 'C2P'
-    elif row['link_type'] == 'C2C':
-        return 'C2C'
+    dfl.renameColumns(
+        dataset='mrg_src_links',
+        columns={
+            'origin_node_cleaned': 'target_node_cleaned',
+            'origin_node_type': 'target_node_type',
+            'target_node_cleaned': 'origin_node_cleaned',
+            'target_node_type': 'origin_node_type',
+        },
+        desc='Rename cols to swap origin/target over and reorder')
+
+    dfl.sortColumns(
+        dataset='mrg_src_links',
+        colList=COL_LIST,
+        desc='Sort columns ready for eventual union')
+
+    dfl.setColumns(
+        dataset='mrg_src_links',
+        columns={'link_type': setLinkType},
+        desc='Set value of link_type column by flipping C2P & P2C')
+
+    dfl.cleanColumn(
+        dataset='mrg_src_links',
+        cleaningFunc=setRelationship,
+        column='relationship',
+        desc="Set the value of the relationship column by flipping of & by")
+
+    dfl.write(
+        dataset='mrg_src_links',
+        targetTableName='tmp_ft_links_generated_C2P',
+        dataLayerID='STG')
 
 
 def generateLinks_P2P_prep(scheduler):
-    df = betl.readData('mrg_src_links', 'STG')
 
-    betl.logStepStart('Add link type)', 1)
-    df = df.loc[df['link_type'] == 'P2C']
-    betl.logStepEnd(df)
+    dfl = betl.DataFlow(
+        desc='Generate the company-to-person (C2P) links by flipping the ' +
+             'P2C links')
 
-    # Force this to DB because next step is SQL that we must push down to DB
-    betl.writeData(df, 'tmp_ft_links_src_grouped', 'STG', forceDBWrite=True)
+    dfl.read(tableName='mrg_src_links', dataLayer='STG')
+
+    dfl.addColumns(
+        dataset='mrg_src_links',
+        columns={
+            'commonality_node_cleaned': None,
+            'commonality_node_type': None},
+        desc='Add commonality node columns (to be populated later)')
+
+    dfl.filter(
+        dataset='mrg_src_links',
+        filters={'link_type': 'P2C'},
+        desc='Filter to P2C links only')
+
+    dfl.write(
+        dataset='mrg_src_links',
+        targetTableName='tmp_ft_links_src_grouped',
+        dataLayerID='STG',
+        forceDBWrite=True,
+        # TODO: ideally the framework would take care of this
+        dtype={'start_date': 'text'},
+        desc='Forcing this write to the DB because the next step is SQL, ' +
+             'pushed down to DB')
 
 
 def generateLinks_P2P_where(scheudler):
@@ -91,14 +126,34 @@ def generateLinks_P2P_where(scheudler):
     sql += "ON l1.target_node_cleaned = l2.target_node_cleaned \n"
     sql += "WHERE  l1.origin_node_cleaned <> l2.origin_node_cleaned; "
 
-    df = betl.customSql(sql, 'STG')
+    dfl = betl.DataFlow(
+        desc='Generate the P2P_where links')
 
-    betl.logStepStart('Reorder columns', 1)
-    cols = betl.getColumnHeadings('tmp_ft_links', 'STG')
-    df = df[cols]
-    betl.logStepEnd(df)
+    dfl.customSQL(
+        sql=sql,
+        dataLayer='STG',
+        dataset='tmp_ft_links_generated_P2P_where')
 
-    betl.writeData(df, 'tmp_ft_links', 'STG', 'append')
+    # TODO: need to sort this out. This is just a placeholder to make the
+    # code work
+    dfl.addColumns(
+        dataset='tmp_ft_links_generated_P2P_where',
+        columns={
+            'audit_source_system': None,
+            'audit_bulk_load_date': None,
+            'audit_latest_delta_load_date': None,
+            'audit_latest_delta_load_operation': None},
+        desc='TODO: create empty audit cols')
+
+    dfl.sortColumns(
+        dataset='tmp_ft_links_generated_P2P_where',
+        colList=COL_LIST,
+        desc='Sort columns ready for eventual union')
+
+    dfl.write(
+        dataset='tmp_ft_links_generated_P2P_where',
+        targetTableName='tmp_ft_links_generated_P2P_where',
+        dataLayerID='STG')
 
 
 def generateLinks_P2P_while(scheudler):
@@ -147,59 +202,120 @@ def generateLinks_P2P_while(scheudler):
     sql += "     coalesce(to_date(l2.end_date, 'YYYYMMDD'),CURRENT_DATE))\n"
     sql += "WHERE  l1.origin_node_cleaned <> l2.origin_node_cleaned; "
 
-    df = betl.customSql(sql, 'STG')
+    dfl = betl.DataFlow(
+        desc='Generate the P2P_where links')
 
-    cols = betl.getColumnHeadings('tmp_ft_links', 'STG')
+    dfl.customSQL(
+        sql=sql,
+        dataLayer='STG',
+        dataset='tmp_ft_links_generated_P2P_while')
 
-    betl.logStepStart('Reorder columns', 1)
-    df = df[cols]
-    betl.logStepEnd(df)
+    # TODO: need to sort this out. This is just a placeholder to make the
+    # code work
+    dfl.addColumns(
+        dataset='tmp_ft_links_generated_P2P_while',
+        columns={
+            'audit_source_system': None,
+            'audit_bulk_load_date': None,
+            'audit_latest_delta_load_date': None,
+            'audit_latest_delta_load_operation': None},
+        desc='TODO: create empty audit cols')
 
-    betl.writeData(df, 'tmp_ft_links', 'STG', 'append')
+    dfl.sortColumns(
+        dataset='tmp_ft_links_generated_P2P_while',
+        colList=COL_LIST,
+        desc='Sort columns ready for eventual union')
+
+    dfl.write(
+        dataset='tmp_ft_links_generated_P2P_while',
+        targetTableName='tmp_ft_links_generated_P2P_while',
+        dataLayerID='STG')
 
 
 def prepareFTLinks(scheduler):
-    df = betl.readData('tmp_ft_links', 'STG')
 
-    # betl.logStepStart('Filter to relationship: sh==sh', 0)
-    # df = df.loc[df['relationship'] == 'sh==sh']
-    # betl.logStepEnd(df)
+    dfl = betl.DataFlow(
+        desc='Bring all our different link types together into a single ' +
+             'dataset')
 
-    betl.logStepStart('Create NK columns', 1)
-    df['nk_origin_node'] = (df['origin_node_type'] +
-                            '_' + df['origin_node_cleaned'])
-    df['nk_target_node'] = (df['target_node_type'] +
-                            '_' + df['target_node_cleaned'])
-    df['nk_commonality_node'] = (df['commonality_node_type'] +
-                                 '_' + df['commonality_node_cleaned'])
-    df.rename(index=str,
-              columns={
-                  'link_type': 'nk_link_type',
-                  'relationship': 'nk_relationship',
-                  'start_date': 'nk_start_date',
-                  'end_date': 'nk_end_date'},
-              inplace=True)
+    dfl.read(tableName='tmp_ft_links_generated_C2P', dataLayer='STG')
+    dfl.read(tableName='tmp_ft_links_generated_P2P_where', dataLayer='STG')
+    dfl.read(tableName='tmp_ft_links_generated_P2P_while', dataLayer='STG')
 
-    betl.logStepEnd(df)
+    dfl.union(
+        datasets=[
+            'tmp_ft_links_generated_C2P',
+            'tmp_ft_links_generated_P2P_where',
+            'tmp_ft_links_generated_P2P_while'],
+        targetDataset='trg_ft_links',
+        desc='Union the three datasets')
 
-    betl.logStepStart('Drop unneeded columns', 3)
-    df.drop([
-        'origin_node_cleaned',
-        'origin_node_type',
-        'target_node_cleaned',
-        'target_node_type',
-        'commonality_node_cleaned',
-        'commonality_node_type'],
-        axis=1,
-        inplace=True)
-    betl.logStepEnd(df)
+    dfl.addColumns(
+        dataset='trg_ft_links',
+        columns={
+            'nk_origin_node': setNKCols_originNode,
+            'nk_target_node': setNKCols_targetNode,
+            'nk_commonality_node': setNKCols_commonalityNode},
+        desc='Set the NK nodes')
 
-    betl.logStepStart('Add duration DD', 4)
-    df['dd_duration'] = 0
-    df['dd_duration'] = df.apply(calculateDuration, axis=1)
-    betl.logStepEnd(df)
+    dfl.renameColumns(
+        dataset='trg_ft_links',
+        columns={
+            'link_type': 'nk_link_type',
+            'relationship': 'nk_relationship',
+            'start_date': 'nk_start_date',
+            'end_date': 'nk_end_date',
+            },
+        desc='Rename the other NK columns to nk_')
 
-    betl.writeData(df, 'trg_ft_links', 'STG')
+    dfl.dropColumns(
+        dataset='trg_ft_links',
+        colsToDrop=[
+            'origin_node_cleaned',
+            'origin_node_type',
+            'target_node_cleaned',
+            'target_node_type',
+            'commonality_node_cleaned',
+            'commonality_node_type'],
+        desc='Drop unneeded cols')
+
+    dfl.addColumns(
+        dataset='trg_ft_links',
+        columns={'dd_duration': calculateDuration},
+        desc='Add a duration degenerate dimension')
+
+    dfl.write(
+        dataset='trg_ft_links',
+        targetTableName='trg_ft_links',
+        dataLayerID='STG')
+
+
+#####################
+# UTILITY FUNCTIONS #
+#####################
+
+def setLinkType(row):
+    if row['link_type'] == 'P2C':
+        return 'C2P'
+    elif row['link_type'] == 'C2C':
+        return 'C2C'
+
+
+def setRelationship(colToClean):
+    cleanCol = colToClean.str.replace('of', 'by')
+    return cleanCol
+
+
+def setNKCols_originNode(row):
+    return row['origin_node_type'] + '_' + row['origin_node_cleaned']
+
+
+def setNKCols_targetNode(row):
+    return row['target_node_type'] + '_' + row['target_node_cleaned']
+
+
+def setNKCols_commonalityNode(row):
+    return row['commonality_node_type'] + '_' + row['commonality_node_cleaned']
 
 
 def calculateDuration(row):

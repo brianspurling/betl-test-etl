@@ -6,10 +6,9 @@ import df_extract_posts
 import df_transform_a_ods as df_transform_ods
 import df_transform_b_mrg as df_transform_mrg
 import df_transform_c_trg_dm as df_transform_dm
-
-# import df_transform_d_trg_ft as df_transform_ft
-# import df_load
-# import df_summarise
+import df_transform_d_trg_ft as df_transform_ft
+import df_load_search_cols as df_load
+import df_summarise
 
 
 scheduleConfig = {
@@ -45,19 +44,18 @@ scheduleConfig = {
         df_transform_dm.prepareDMAddress,
         df_transform_dm.prepareDMAddressType,
         df_transform_dm.prepareDMNetworkMetric,
-        # df_transform_ft.loadSrcLinksIntoTempFile,
-        # df_transform_ft.generateLinks_C2P,
-        # df_transform_ft.generateLinks_P2P_prep,
-        # df_transform_ft.generateLinks_P2P_where,
-        # df_transform_ft.generateLinks_P2P_while,
-        # df_transform_ft.prepareFTLinks
+        df_transform_ft.generateLinks_C2P,
+        df_transform_ft.generateLinks_P2P_prep,
+        df_transform_ft.generateLinks_P2P_where,
+        df_transform_ft.generateLinks_P2P_while,
+        df_transform_ft.prepareFTLinks
     ],
     'LOAD_DFS': [
-        # df_load.createTextSearchColumns,
+        df_load.createTextSearchColumns,
     ],
     'SUMMARISE_DFS': [
-        # df_summarise.buildFtMentions,
-        # df_summarise.writeBackMentions
+        df_summarise.buildSuMentions,
+        df_summarise.writeBackMentions
     ]
 }
 

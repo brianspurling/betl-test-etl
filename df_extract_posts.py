@@ -20,7 +20,5 @@ def extractPosts(scheduler):
                   targetTableName='src_wp_documents',
                   dataLayerID='SRC')
 
-        dfl.close()
-
     elif scheduler.bulkOrDelta == 'DELTA':
         pass

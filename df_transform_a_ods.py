@@ -107,8 +107,6 @@ def loadCompaniesToODS(scheduler):
         targetTableName='ods_companies',
         dataLayerID='STG')
 
-    dfl.close()
-
 
 def loadPeopleToODS(scheduler):
 
@@ -254,7 +252,7 @@ def loadPeopleToODS(scheduler):
     dfl.cleanColumn(
         dataset='ods_people',
         cleaningFunc=validateStringDates,
-        column='appointment_date',
+        column='ceased',
         desc='Convert ceased to Date and back to Str (YYYYMMDD),' +
              ' remove NaNs')
 
@@ -262,8 +260,6 @@ def loadPeopleToODS(scheduler):
         dataset='ods_people',
         targetTableName='ods_people',
         dataLayerID='STG')
-
-    dfl.close()
 
 
 def loadAddressesToODS(scheduler):
@@ -551,8 +547,6 @@ def loadAddressesToODS(scheduler):
         targetTableName='ods_addresses',
         dataLayerID='STG')
 
-    dfl.close()
-
 
 def loadPostsToODS(scheduler):
 
@@ -587,9 +581,9 @@ def loadPostsToODS(scheduler):
     dfl.addColumns(
         dataset='src_wp_documents',
         columns={
-            'corruption_doc_status': dfl.getColumn(
+            'corruption_doc_status': dfl.getColumns(
                                         dataset='src_wp_documents',
-                                        columnName='post_status')},
+                                        columnNames='post_status')},
         desc='Create a corruption_doc_status, preserving the original post ' +
              'status')
 
@@ -604,8 +598,6 @@ def loadPostsToODS(scheduler):
         dataset='src_wp_documents',
         targetTableName='ods_posts',
         dataLayerID='STG')
-
-    dfl.close()
 
 
 def loadSrcLinksToODS(scheduler):
@@ -626,7 +618,8 @@ def loadSrcLinksToODS(scheduler):
             'company_name_original',
             'company_name_cleaned',
             'appointment_date',
-            'ceased'],
+            'ceased',
+            'role_type'],  # used by setP2CRelationship
         desc='Drop cols to make datasets compatible')
 
     dfl.renameColumns(
@@ -651,6 +644,11 @@ def loadSrcLinksToODS(scheduler):
         dataset='ods_people',
         columns={'relationship': setP2CRelationship},
         desc='Set the relationship for each link')
+
+    dfl.dropColumns(
+        dataset='ods_people',
+        colsToDrop={'role_type'},
+        desc='Drop role_type')
 
     # COMPANY SHAREHOLDERS (ODS_COMPANIES)
 
@@ -705,8 +703,6 @@ def loadSrcLinksToODS(scheduler):
         dataset='ods_src_links',
         targetTableName='ods_src_links',
         dataLayerID='STG')
-
-    dfl.close()
 
 
 #####################

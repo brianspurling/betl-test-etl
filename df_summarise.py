@@ -1,97 +1,103 @@
 import betl
 import pandas as pd
 
+ALL_CONTENT_CLEAN = None
+ALL_CONTENT_ALPHA = None
+DF_MENTIONED_NODES = None
+DF_SU_MENTIONS = None
+DF_CORRUPTION_DOCS = None
 
-def buildFtMentions(scheduler):
+
+def buildSuMentions(scheduler):
+
+    global ALL_CONTENT_CLEAN
+    global ALL_CONTENT_ALPHA
+    global DF_MENTIONED_NODES
+    global DF_SU_MENTIONS
+    global DF_CORRUPTION_DOCS
+
     if scheduler.bulkOrDelta == 'BULK':
 
-        df_cd = betl.readData('dm_corruption_doc', 'TRG', forceDBRead='TRG')
-        df_n = betl.readData('dm_node', 'TRG', forceDBRead='TRG')
+        dfl = betl.DataFlow(
+            desc='Build su_mentions by searching all docs for all node names')
 
-        betl.logStepStart('Creating two large strings of all doc content ' +
-                          '(clean and alphanumeric)')
-        allContent_clean = \
-            df_cd['corruption_doc_content_cleaned'].str.cat(sep=' . ')
-        allContent_alpha = \
-            df_cd['corruption_doc_content_alphanumeric'].str.cat(sep=' . ')
-        betl.logStepEnd()
+        # FIRST ITERATION
 
-        # this is the big one. Takes about 5 hours, and searches all documents
-        # (in a single string) for every node name (one by one)
-        betl.logStepStart('Identifing all nodes mentioned somewhere')
-        df_mn = pd.DataFrame(columns=[
-            'node_id',
-            'name',
-            'name_alphanumeric'])
-        count = 0
-        for row in df_n.itertuples():
-            count += 1
-            if(row[3] in allContent_clean):
-                df_mn.loc[len(df_mn)] = [row[1], row[3], row[4]]
-            elif(row[4] in allContent_alpha):
-                df_mn.loc[len(df_mn)] = [row[1], row[3], row[4]]
-            # Approx once ever x minutes, write to file
-            if count % 10000 == 0:
-                betl.writeData(
-                    df_mn,
-                    'tmp_su_mentions',
-                    'SUM')
-        betl.logStepEnd(df_mn)
+        dfl.read(
+            tableName='dm_node',
+            dataLayer='TRG',
+            forceDBRead=True)
 
-        betl.writeData(df_mn, 'tmp_su_mentions', 'SUM')
+        cols = dfl.getColumns(
+            dataset='src_wp_documents',
+            columnNames=[
+                'corruption_doc_content_cleaned',
+                'corruption_doc_content_alphanumeric'],
+            desc='Creating two large strings of all doc content ' +
+                 '(one for the cleaned text and one for the alphanumeric)')
 
-        betl.logStepStart('Creating su_mentions (doc/node pairs)')
-        df_m = pd.DataFrame(columns=[
-            'fk_node',
-            'fk_corruption_doc',
-            'mentions_count',
-            'is_mentioned_count'])
+        ALL_CONTENT_CLEAN = \
+            cols['corruption_doc_content_cleaned'].str.cat(sep=' . ')
+        ALL_CONTENT_ALPHA = \
+            cols['corruption_doc_content_alphanumeric'].str.cat(sep=' . ')
+        DF_MENTIONED_NODES = pd.DataFrame(
+            columns=['node_id', 'name', 'name_alphanumeric'])
 
-        for node in df_mn.itertuples():
+        dfl.iterate(
+            dataset='dm_node',
+            function=searchAllContentForNodeName,
+            desc='Identifing all nodes mentioned somewhere. This is the ' +
+                 'big one! Takes about 5 hours, and searches all documents ' +
+                 '(in a single string) for every node name (one by one). ' +
+                 'It tries the cleaned doc content first, then tries the ' +
+                 'alphanumeric. If either succeeds we have a match')
 
-            # This is the main text search
-            matches_clean = \
-                df_cd['corruption_doc_content_cleaned'].str.count(node[2])
-            matches_alpha = \
-                df_cd['corruption_doc_content_alphanumeric'].str.count(node[3])
-            df_matches_clean = pd.DataFrame(matches_clean)
-            df_matches_alpha = pd.DataFrame(matches_alpha)
-            df_matches_clean.columns = ['mentions_count_clean']
-            df_matches_alpha.columns = ['mentions_count_alpha']
+        dfl.createDataset(
+            dataset='mentioned_nodes',
+            data=DF_MENTIONED_NODES,
+            desc='Loaded our generated mentioned_nodes df into the dataflow')
 
-            df_temp = pd.DataFrame(
-                columns=[
-                    'fk_corruption_doc',
-                    'fk_node',
-                    'mentions_count',
-                    'mentions_count_clean',
-                    'mentions_count_alpha',
-                    'is_mentioned_count'])
-            df_temp['fk_corruption_doc'] = \
-                pd.to_numeric(df_cd['corruption_doc_id'])
-            nodeID = int(node[1])
-            df_temp['fk_node'] = nodeID
-            df_temp['mentions_count_clean'] = \
-                pd.to_numeric(
-                    df_matches_clean['mentions_count_clean'],
-                    downcast='integer')
-            df_temp['mentions_count_alpha'] = \
-                pd.to_numeric(
-                    df_matches_alpha['mentions_count_alpha'],
-                    downcast='integer')
-            df_temp['mentions_count'] = \
-                df_temp['mentions_count_clean'] + \
-                df_temp['mentions_count_alpha']
-            df_temp.drop(
-                ['mentions_count_clean', 'mentions_count_alpha'],
-                axis=1,
-                inplace=True)
-            df_m = pd.concat(objs=[df_m, df_temp])
+        # SECOND ITERATION
 
-        df_m = df_m.loc[df_m['mentions_count'] > 0]
-        betl.logStepEnd(df_m)
+        dfl.read(
+            tableName='dm_corruption_doc',
+            dataLayer='TRG',
+            forceDBRead=True)
 
-        betl.writeData(df_m, 'su_mentions', 'SUM', forceDBWrite=True)
+        DF_SU_MENTIONS = pd.DataFrame(
+            columns=[
+                'fk_node',
+                'fk_corruption_doc',
+                'mentions_count',
+                'is_mentioned_count'])
+        DF_CORRUPTION_DOCS = dfl.getDataFrames(datasets='dm_corruption_doc')
+
+        dfl.iterate(
+            dataset='mentioned_nodes',
+            function=searchDMCorruptionDocsForMentionedNodeNames,
+            desc='Using our new list of mentioned nodes, now create ' +
+                 'su_mentions properly (i.e. doc/node pairs) by ' +
+                 'iterating through our mentioned nodes and searching ' +
+                 'dm_corruption_docs (cleaned and alpha) for each')
+
+        dfl.createDataset(
+            dataset='su_mentions',
+            data=DF_SU_MENTIONS,
+            desc='Loaded our generated su_mentions df into the dataflow')
+
+        dfl.filter(
+            dataset='su_mentions',
+            filters={'mentions_count': ('>', 0)},
+            desc='Filter to mentioned nodes only (because we found the ' +
+                 'node/doc pairs by constantly generating a count for ' +
+                 'every node in every doc)')
+
+        dfl.write(
+            dataset='su_mentions',
+            targetTableName='su_mentions',
+            dataLayerID='SUM',
+            forceDBWrite=True,
+            desc='Writing to summary DB layer')
 
     elif scheduler.bulkOrDelta == 'DELTA':
         pass
@@ -100,6 +106,10 @@ def buildFtMentions(scheduler):
 def writeBackMentions(scheduler):
 
     if scheduler.bulkOrDelta == 'BULK':
+        dfl = betl.DataFlow(
+            desc='Write-back the mentions counts to dm_node and ' +
+                 'dm_corruption_doc')
+
         sql = ''
         sql += "update dm_node n \n"
         sql += "set    mentions_count = \n"
@@ -107,7 +117,10 @@ def writeBackMentions(scheduler):
         sql += "		   	from   su_mentions m \n"
         sql += "			where  m.fk_node = n.node_id) \n"
 
-        betl.customSql(sql=sql, dataLayerID='TRG')
+        dfl.customSQL(
+            sql=sql,
+            dataLayer='TRG',
+            desc='Setting mentions_count on dm_node')
 
         sql = ''
         sql += "update dm_corruption_doc cd \n"
@@ -131,7 +144,76 @@ def writeBackMentions(scheduler):
         sql += "			where  n.node_type in ('company') \n"
         sql += "            and m.fk_corruption_doc = cd.corruption_doc_id) \n"
 
-        betl.customSql(sql=sql, dataLayerID='TRG')
+        dfl.customSQL(
+            sql=sql,
+            dataLayer='TRG',
+            desc='Setting number_mentioned_nodes / _people / _companies ' +
+                 ' on dm_corruption_doc')
+
+        dfl.close()
 
     elif scheduler.bulkOrDelta == 'DELTA':
         pass
+
+
+#####################
+# UTILITY FUNCTIONS #
+#####################
+
+
+def searchAllContentForNodeName(row):
+
+    global DF_MENTIONED_NODES
+
+    if(row[3] in ALL_CONTENT_CLEAN):
+        DF_MENTIONED_NODES.loc[len(DF_MENTIONED_NODES)] = \
+            [row[1], row[3], row[4]]
+    elif(row[4] in ALL_CONTENT_ALPHA):
+        DF_MENTIONED_NODES.loc[len(DF_MENTIONED_NODES)] = \
+            [row[1], row[3], row[4]]
+
+
+def searchDMCorruptionDocsForMentionedNodeNames(row):
+
+    global DF_SU_MENTIONS
+
+    # This is the main text search
+    matches_clean = \
+        DF_CORRUPTION_DOCS['corruption_doc_content_cleaned'] \
+        .str.count(row[2])
+    matches_alpha = \
+        DF_CORRUPTION_DOCS['corruption_doc_content_alphanumeric'] \
+        .str.count(row[3])
+    df_matches_clean = pd.DataFrame(matches_clean)
+    df_matches_alpha = pd.DataFrame(matches_alpha)
+    df_matches_clean.columns = ['mentions_count_clean']
+    df_matches_alpha.columns = ['mentions_count_alpha']
+
+    df_temp = pd.DataFrame(
+        columns=[
+            'fk_corruption_doc',
+            'fk_node',
+            'mentions_count',
+            'mentions_count_clean',
+            'mentions_count_alpha',
+            'is_mentioned_count'])
+    df_temp['fk_corruption_doc'] = \
+        pd.to_numeric(DF_CORRUPTION_DOCS['corruption_doc_id'])
+    nodeID = int(row[1])
+    df_temp['fk_node'] = nodeID
+    df_temp['mentions_count_clean'] = \
+        pd.to_numeric(
+            df_matches_clean['mentions_count_clean'],
+            downcast='integer')
+    df_temp['mentions_count_alpha'] = \
+        pd.to_numeric(
+            df_matches_alpha['mentions_count_alpha'],
+            downcast='integer')
+    df_temp['mentions_count'] = \
+        df_temp['mentions_count_clean'] + \
+        df_temp['mentions_count_alpha']
+    df_temp.drop(
+        ['mentions_count_clean', 'mentions_count_alpha'],
+        axis=1,
+        inplace=True)
+    DF_SU_MENTIONS = pd.concat(objs=[DF_SU_MENTIONS, df_temp])

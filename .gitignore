@@ -1,9 +1,11 @@
 # Data etc
 tmp_data/
 logs/
-sql_scripts/
 src_data/
 profiling/
+tmp_data*/
+.ipynb_checkpoints/
+sql_scripts/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

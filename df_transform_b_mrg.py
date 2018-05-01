@@ -22,8 +22,6 @@ def loadCompaniesToMRG(scheduler):
         targetTableName='mrg_companies',
         dataLayerID='STG')
 
-    dfl.close()
-
 
 def loadPeopleToMRG(scheduler):
 
@@ -46,8 +44,6 @@ def loadPeopleToMRG(scheduler):
         targetTableName='mrg_people',
         dataLayerID='STG')
 
-    dfl.close()
-
 
 def loadAddressesToMRG(scheduler):
 
@@ -69,8 +65,6 @@ def loadAddressesToMRG(scheduler):
         dataset='ods_addresses',
         targetTableName='mrg_addresses',
         dataLayerID='STG')
-
-    dfl.close()
 
 
 # In theory, there shouldn't be any duplicate links, because this is the
@@ -105,5 +99,3 @@ def loadSrcLinksToMRG(scheduler):
         dataset='ods_src_links',
         targetTableName='mrg_src_links',
         dataLayerID='STG')
-
-    dfl.close()

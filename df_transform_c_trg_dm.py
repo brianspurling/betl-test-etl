@@ -12,8 +12,6 @@ def prepareDMLinkType(scheduler):
         targetTableName='trg_dm_link_type',
         dataLayerID='STG')
 
-    dfl.close()
-
 
 def prepareDMRelationship(scheduler):
 
@@ -26,8 +24,6 @@ def prepareDMRelationship(scheduler):
         dataset='src_msd_dm_relationship',
         targetTableName='trg_dm_relationship',
         dataLayerID='STG')
-
-    dfl.close()
 
 
 def prepareDMNode(scheduler):
@@ -82,8 +78,6 @@ def prepareDMNode(scheduler):
         targetTableName='trg_dm_node',
         dataLayerID='STG')
 
-    dfl.close()
-
 
 def prepareDMCorruptionDoc(scheduler):
 
@@ -112,8 +106,6 @@ def prepareDMCorruptionDoc(scheduler):
         targetTableName='trg_dm_corruption_doc',
         dataLayerID='STG')
 
-    dfl.close()
-
 
 def prepareDMAddress(scheduler):
 
@@ -130,8 +122,6 @@ def prepareDMAddress(scheduler):
         dataset='mrg_addresses',
         targetTableName='trg_dm_address',
         dataLayerID='STG')
-
-    dfl.close()
 
 
 def prepareDMAddressType(scheduler):
@@ -188,8 +178,6 @@ def prepareDMAddressType(scheduler):
         targetTableName='trg_dm_address_type',
         dataLayerID='STG')
 
-    dfl.close()
-
 
 def prepareDMNetworkMetric(scheduler):
 
@@ -202,8 +190,6 @@ def prepareDMNetworkMetric(scheduler):
         dataset='src_msd_dm_network_metric',
         targetTableName='trg_dm_network_metric',
         dataLayerID='STG')
-
-    dfl.close()
 
 
 ####################
