@@ -141,7 +141,7 @@ def generateLinks_P2P_where(scheudler):
             'audit_source_system': None,
             'audit_bulk_load_date': None,
             'audit_latest_delta_load_date': None,
-            'audit_latest_delta_load_operation': None},
+            'audit_latest_load_operation': 'BULK'},
         desc='TODO: create empty audit cols')
 
     dfl.sortColumns(
@@ -217,7 +217,7 @@ def generateLinks_P2P_while(scheudler):
             'audit_source_system': None,
             'audit_bulk_load_date': None,
             'audit_latest_delta_load_date': None,
-            'audit_latest_delta_load_operation': None},
+            'audit_latest_load_operation': 'BULK'},
         desc='TODO: create empty audit cols')
 
     dfl.sortColumns(
