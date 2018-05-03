@@ -10,7 +10,6 @@ import df_transform_d_trg_ft as df_transform_ft
 import df_load_search_cols as df_load
 import df_summarise
 
-
 scheduleConfig = {
     'DEFAULT_EXTRACT': True,
     'SRC_TABLES_TO_EXCLUDE_FROM_DEFAULT_EXTRACT': [

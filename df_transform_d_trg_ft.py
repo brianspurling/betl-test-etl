@@ -59,8 +59,8 @@ def generateLinks_C2P(scheduler):
 def generateLinks_P2P_prep(scheduler):
 
     dfl = betl.DataFlow(
-        desc='Generate the company-to-person (C2P) links by flipping the ' +
-             'P2C links')
+        desc='Prep for the generation of person-to-person (P2P) links ' +
+             'by flipping the writing all P2C links to a temp DB table')
 
     dfl.read(tableName='mrg_src_links', dataLayer='STG')
 
@@ -83,8 +83,7 @@ def generateLinks_P2P_prep(scheduler):
         forceDBWrite=True,
         # TODO: ideally the framework would take care of this
         dtype={'start_date': 'text'},
-        desc='Forcing this write to the DB because the next step is SQL, ' +
-             'pushed down to DB')
+        desc='Forcing this write to DB because the next step is custom SQL')
 
 
 def generateLinks_P2P_where(scheudler):
@@ -203,7 +202,7 @@ def generateLinks_P2P_while(scheudler):
     sql += "WHERE  l1.origin_node_cleaned <> l2.origin_node_cleaned; "
 
     dfl = betl.DataFlow(
-        desc='Generate the P2P_where links')
+        desc='Generate the P2P_while links')
 
     dfl.customSQL(
         sql=sql,

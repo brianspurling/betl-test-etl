@@ -761,8 +761,10 @@ def cleanPostContent(colToClean):
 
 
 def validateStringDates(dateCol):
-    col = pd.to_datetime(dateCol, errors='coerce').dt.strftime('%Y%m%d')
-    col.replace('NaT', '', inplace=True)
+    dateCol = pd.to_datetime(dateCol, errors='coerce').dt.strftime('%Y%m%d') \
+        .copy()
+    dateCol.replace('NaT', '', inplace=True)
+    return dateCol
 
 
 def setP2CRelationship(row):

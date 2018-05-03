@@ -24,12 +24,17 @@ def buildSuMentions(scheduler):
         # FIRST ITERATION
 
         dfl.read(
+            tableName='dm_corruption_doc',
+            dataLayer='TRG',
+            forceDBRead=True)
+
+        dfl.read(
             tableName='dm_node',
             dataLayer='TRG',
             forceDBRead=True)
 
         cols = dfl.getColumns(
-            dataset='src_wp_documents',
+            dataset='dm_corruption_doc',
             columnNames=[
                 'corruption_doc_content_cleaned',
                 'corruption_doc_content_alphanumeric'],
@@ -59,17 +64,13 @@ def buildSuMentions(scheduler):
 
         # SECOND ITERATION
 
-        dfl.read(
-            tableName='dm_corruption_doc',
-            dataLayer='TRG',
-            forceDBRead=True)
-
         DF_SU_MENTIONS = pd.DataFrame(
             columns=[
                 'fk_node',
                 'fk_corruption_doc',
                 'mentions_count',
                 'is_mentioned_count'])
+        # TODO: urgh, global var here, is there a better way?
         DF_CORRUPTION_DOCS = dfl.getDataFrames(datasets='dm_corruption_doc')
 
         dfl.iterate(
@@ -97,6 +98,7 @@ def buildSuMentions(scheduler):
             targetTableName='su_mentions',
             dataLayerID='SUM',
             forceDBWrite=True,
+            append_or_replace='append',  # stops it removing SK!
             desc='Writing to summary DB layer')
 
     elif scheduler.bulkOrDelta == 'DELTA':

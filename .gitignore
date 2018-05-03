@@ -6,6 +6,7 @@ profiling/
 tmp_data*/
 .ipynb_checkpoints/
 sql_scripts/
+schemas/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
