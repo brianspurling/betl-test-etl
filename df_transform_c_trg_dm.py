@@ -152,20 +152,10 @@ def prepareDMAddressType(scheduler):
                  'address_type_name': addressTypeName},
         desc='Add address_role column')
 
-    dfl.sortColumns(
-        dataset='ods_addresses',
-        colList=colList,
-        desc='Sort list ready for union')
-
     # MSD ADDRESS_TYPE
 
     dfl.read(tableName='src_msd_dm_address_type', dataLayer='SRC')
-
-    dfl.sortColumns(
-        dataset='src_msd_dm_address_type',
-        colList=colList,
-        desc='Sort list ready for union')
-
+    
     # TRG_DM_ADDRESS_TYPE
 
     dfl.union(

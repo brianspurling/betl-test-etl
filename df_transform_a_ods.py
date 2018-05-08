@@ -47,7 +47,7 @@ def loadCompaniesToODS(scheduler):
         dataset='src_ipa_shareholders',
         colsToKeep=[
             'name',
-            'shareholder_company_number',
+            'shareholding_company_number',
             'appointed',
             'ceased',
             'company_name',
@@ -138,11 +138,6 @@ def loadPeopleToODS(scheduler):
         colsToKeep=trgCols,
         desc='Drop cols to make datasets compatible')
 
-    dfl.sortColumns(
-        dataset='src_ipa_directors',
-        colList=trgCols,
-        desc='Sort columns ready for union')
-
     # SHAREHOLDERS
 
     dfl.read(tableName='src_ipa_shareholders', dataLayer='SRC')
@@ -173,11 +168,6 @@ def loadPeopleToODS(scheduler):
         colsToKeep=trgCols,
         desc='Drop cols to make datasets compatible')
 
-    dfl.sortColumns(
-        dataset='src_ipa_shareholders',
-        colList=trgCols,
-        desc='Sort columns ready for union')
-
     # SECRETARIES
 
     dfl.read(tableName='src_ipa_secretaries', dataLayer='SRC')
@@ -202,11 +192,6 @@ def loadPeopleToODS(scheduler):
         dataset='src_ipa_secretaries',
         colsToKeep=trgCols,
         desc='Drop cols to make datasets compatible')
-
-    dfl.sortColumns(
-        dataset='src_ipa_secretaries',
-        colList=trgCols,
-        desc='Sort columns ready for union')
 
     # ODS_PEOPLE
 
@@ -326,6 +311,8 @@ def loadAddressesToODS(scheduler):
             'director_postal_addresses'],
         desc='Duplicate into two datasets, ready to union')
 
+    # RESIDENTIAL DIRECTOR ADDRESSES
+
     dfl.dropColumns(
         dataset='director_residential_addresses',
         colsToDrop=['postal_address'],
@@ -336,6 +323,13 @@ def loadAddressesToODS(scheduler):
         columns={'residential_address': 'address_original'},
         desc='Rename residential_address to address_original')
 
+    dfl.addColumns(
+        dataset='director_residential_addresses',
+        columns={'address_type': 'residential'},
+        desc='Add address_type type column')
+
+    # POSTAL DIRECTOR ADDRESSES
+
     dfl.dropColumns(
         dataset='director_postal_addresses',
         colsToDrop=['residential_address'],
@@ -345,6 +339,13 @@ def loadAddressesToODS(scheduler):
         dataset='director_postal_addresses',
         columns={'postal_address': 'address_original'},
         desc='Rename postal_address to address_original')
+
+    dfl.addColumns(
+        dataset='director_postal_addresses',
+        columns={'address_type': 'postal'},
+        desc='Add address_type type column')
+
+    # UNION DIRECTOR ADDRESSES
 
     dfl.union(
         datasets=[
@@ -407,6 +408,8 @@ def loadAddressesToODS(scheduler):
             'shareholders_postal_addresses'],
         desc='Duplicate into two datasets, ready to union')
 
+    # SHAREHOLDER RESIDENTIAL ADDRESSES
+
     dfl.dropColumns(
         dataset='shareholders_residential_addresses',
         colsToDrop=['postal_address'],
@@ -417,6 +420,13 @@ def loadAddressesToODS(scheduler):
         columns={'residential_address': 'address_original'},
         desc='Rename residential_address to address_original')
 
+    dfl.addColumns(
+        dataset='shareholders_residential_addresses',
+        columns={'address_type': 'residential'},
+        desc='Add address_type type column')
+
+    # SHAREHOLDER POSTAL ADDRESSES
+
     dfl.dropColumns(
         dataset='shareholders_postal_addresses',
         colsToDrop=['residential_address'],
@@ -426,6 +436,13 @@ def loadAddressesToODS(scheduler):
         dataset='shareholders_postal_addresses',
         columns={'postal_address': 'address_original'},
         desc='Rename postal_address to address_original')
+
+    dfl.addColumns(
+        dataset='shareholders_postal_addresses',
+        columns={'address_type': 'postal'},
+        desc='Add address_type type column')
+
+    # UNION SHAREHOLDER ADDRESSES
 
     dfl.union(
         datasets=[
@@ -483,6 +500,8 @@ def loadAddressesToODS(scheduler):
             'secretaries_postal_addresses'],
         desc='Duplicate into two datasets, ready to union')
 
+    # SECRETARY RESIDENTIAL ADDRESSES
+
     dfl.dropColumns(
         dataset='secretaries_residential_addresses',
         colsToDrop=['postal_address'],
@@ -493,6 +512,13 @@ def loadAddressesToODS(scheduler):
         columns={'residential_address': 'address_original'},
         desc='Rename residential_address to address_original')
 
+    dfl.addColumns(
+        dataset='secretaries_residential_addresses',
+        columns={'address_type': 'residential'},
+        desc='Add address_type type column')
+
+    # SECRETARY POSTAL ADDRESSES
+
     dfl.dropColumns(
         dataset='secretaries_postal_addresses',
         colsToDrop=['residential_address'],
@@ -502,6 +528,13 @@ def loadAddressesToODS(scheduler):
         dataset='secretaries_postal_addresses',
         columns={'postal_address': 'address_original'},
         desc='Rename postal_address to address_original')
+
+    dfl.addColumns(
+        dataset='secretaries_postal_addresses',
+        columns={'address_type': 'postal'},
+        desc='Add address_type type column')
+
+    # UNION SECRETARY ADDRESSES
 
     dfl.union(
         datasets=[

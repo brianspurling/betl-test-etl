@@ -34,11 +34,6 @@ def generateLinks_C2P(scheduler):
         },
         desc='Rename cols to swap origin/target over and reorder')
 
-    dfl.sortColumns(
-        dataset='mrg_src_links',
-        colList=COL_LIST,
-        desc='Sort columns ready for eventual union')
-
     dfl.setColumns(
         dataset='mrg_src_links',
         columns={'link_type': setLinkType},
@@ -144,11 +139,6 @@ def generateLinks_P2P_where(scheudler):
             'audit_latest_load_operation': 'BULK'},
         desc='TODO: create empty audit cols')
 
-    dfl.sortColumns(
-        dataset='tmp_ft_links_generated_P2P_where',
-        colList=COL_LIST,
-        desc='Sort columns ready for eventual union')
-
     dfl.write(
         dataset='tmp_ft_links_generated_P2P_where',
         targetTableName='tmp_ft_links_generated_P2P_where',
@@ -219,11 +209,6 @@ def generateLinks_P2P_while(scheudler):
             'audit_latest_delta_load_date': None,
             'audit_latest_load_operation': 'BULK'},
         desc='TODO: create empty audit cols')
-
-    dfl.sortColumns(
-        dataset='tmp_ft_links_generated_P2P_while',
-        colList=COL_LIST,
-        desc='Sort columns ready for eventual union')
 
     dfl.write(
         dataset='tmp_ft_links_generated_P2P_while',
