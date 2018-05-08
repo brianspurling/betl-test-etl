@@ -5,6 +5,7 @@ src_data/
 profiling/
 tmp_data*/
 .ipynb_checkpoints/
+*.ipynb
 sql_scripts/
 schemas/
 
