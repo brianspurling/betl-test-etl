@@ -12,14 +12,14 @@ import df_summarise
 
 scheduleConfig = {
     'DEFAULT_EXTRACT': True,
-    'SRC_TABLES_TO_EXCLUDE_FROM_DEFAULT_EXTRACT': [
-        'src_wp_documents'
-    ],
+    'DEFAULT_TRANSFORM': True,
     'DEFAULT_LOAD': True,
     'DEFAULT_SUMMARISE': True,
     'DEFAULT_DM_DATE': True,
+    'SRC_TABLES_TO_EXCLUDE_FROM_DEFAULT_EXTRACT': [
+        'src_wp_documents'
+    ],
     'TRG_TABLES_TO_EXCLUDE_FROM_DEFAULT_LOAD': [
-        'ft_mentions',
         'ft_addresses_nodes',
         'ft_network_metrics'
     ],
