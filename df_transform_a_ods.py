@@ -52,7 +52,7 @@ def loadCompaniesToODS(scheduler):
             'ceased',
             'company_name',
             'company_number'],
-        desc='Drop cols to make datasets compatible')
+        desc='Drop cols to make shareholder dataset compatible')
 
     dfl.addColumns(
         dataset='src_ipa_shareholders',
@@ -131,12 +131,12 @@ def loadPeopleToODS(scheduler):
     dfl.addColumns(
         dataset='src_ipa_directors',
         columns={'role_type': 'DIRECTOR'},
-        desc='Add column indicating the role')
+        desc='Add column indicating these are directors')
 
     dfl.dropColumns(
         dataset='src_ipa_directors',
         colsToKeep=trgCols,
-        desc='Drop cols to make datasets compatible')
+        desc='Drop cols to make directors dataset compatible')
 
     # SHAREHOLDERS
 
@@ -150,13 +150,13 @@ def loadPeopleToODS(scheduler):
     dfl.addColumns(
         dataset='src_ipa_shareholders',
         columns={'role_type': 'SHAREHOLDER'},
-        desc='Add column indicating the role')
+        desc='Add column indicating these are shareholders')
 
     dfl.dropColumns(
         dataset='src_ipa_shareholders',
         colsToDrop=['appointment_date'],
-        desc='Drop the appointment_date column (we will use the appointed ' +
-             'col instead)')
+        desc='Drop the appointment_date column from sh (we will use the ' +
+             'appointed col instead)')
 
     dfl.renameColumns(
         dataset='src_ipa_shareholders',
@@ -166,7 +166,7 @@ def loadPeopleToODS(scheduler):
     dfl.dropColumns(
         dataset='src_ipa_shareholders',
         colsToKeep=trgCols,
-        desc='Drop cols to make datasets compatible')
+        desc='Drop cols to make shareholders dataset compatible')
 
     # SECRETARIES
 
@@ -175,13 +175,13 @@ def loadPeopleToODS(scheduler):
     dfl.addColumns(
         dataset='src_ipa_secretaries',
         columns={'role_type': 'SECRETARY'},
-        desc='Add column indicating the role')
+        desc='Add column indicating these are secretaries')
 
     dfl.dropColumns(
         dataset='src_ipa_secretaries',
         colsToDrop=['appointment_date'],
-        desc='Drop the appointment_date column (we will use the appointed ' +
-             'col instead)')
+        desc='Drop the appointment_date column from secs (we will use ' +
+             'the appointed col instead)')
 
     dfl.renameColumns(
         dataset='src_ipa_secretaries',
@@ -191,7 +191,7 @@ def loadPeopleToODS(scheduler):
     dfl.dropColumns(
         dataset='src_ipa_secretaries',
         colsToKeep=trgCols,
-        desc='Drop cols to make datasets compatible')
+        desc='Drop cols to make secretaries datasets compatible')
 
     # ODS_PEOPLE
 
@@ -273,7 +273,7 @@ def loadAddressesToODS(scheduler):
     dfl.addColumns(
         dataset='src_ipa_addresses',
         columns={'src_table': 'ADDRESSES'},
-        desc='Add column to indicate source table for these rows')
+        desc='Add column to indicate source table for company addresses rows')
 
     # DIRECTOR'S ADDRSSES
 
@@ -295,55 +295,55 @@ def loadAddressesToODS(scheduler):
             'name',
             'nationality',
             'this_person_has_consented_to_act_as_a_director_for_this_company'],
-        desc='Drop unneeded columns')
+        desc='Drop unneeded columns from directors')
 
     dfl.renameColumns(
         dataset='src_ipa_directors',
         columns={
             'appointment_date': 'start_date',
             'ceased': 'end_date'},
-        desc='Rename date columns')
+        desc='Rename date columns on directors')
 
     dfl.duplicateDataset(
         dataset='src_ipa_directors',
         targetDatasets=[
             'director_residential_addresses',
             'director_postal_addresses'],
-        desc='Duplicate into two datasets, ready to union')
+        desc='Duplicate directors into two datasets, ready to union')
 
     # RESIDENTIAL DIRECTOR ADDRESSES
 
     dfl.dropColumns(
         dataset='director_residential_addresses',
         colsToDrop=['postal_address'],
-        desc='Drop the postal address from the residential table')
+        desc='Drop the postal address from the dir residential table')
 
     dfl.renameColumns(
         dataset='director_residential_addresses',
         columns={'residential_address': 'address_original'},
-        desc='Rename residential_address to address_original')
+        desc='Rename dir residential_address to address_original')
 
     dfl.addColumns(
         dataset='director_residential_addresses',
         columns={'address_type': 'residential'},
-        desc='Add address_type type column')
+        desc='Add address_type type column: res directors')
 
     # POSTAL DIRECTOR ADDRESSES
 
     dfl.dropColumns(
         dataset='director_postal_addresses',
         colsToDrop=['residential_address'],
-        desc='Drop the residential address from the postal table')
+        desc='Drop the dir residential address from the postal table')
 
     dfl.renameColumns(
         dataset='director_postal_addresses',
         columns={'postal_address': 'address_original'},
-        desc='Rename postal_address to address_original')
+        desc='Rename dir postal_address to address_original')
 
     dfl.addColumns(
         dataset='director_postal_addresses',
         columns={'address_type': 'postal'},
-        desc='Add address_type type column')
+        desc='Add address_type type column: postal dirs')
 
     # UNION DIRECTOR ADDRESSES
 
@@ -357,7 +357,7 @@ def loadAddressesToODS(scheduler):
     dfl.addColumns(
         dataset='director_addresses',
         columns={'src_table': 'DIRECTORS'},
-        desc='Add column to indicate source table for these rows')
+        desc='Add column to indicate source table for director addresses')
 
     # SHAREHOLDERS
 
@@ -392,55 +392,55 @@ def loadAddressesToODS(scheduler):
             'ceased',
             'residential_address',
             'postal_address'],
-        desc='Drop unneeded columns')
+        desc='Drop unneeded columns from shareholders')
 
     dfl.renameColumns(
         dataset='src_ipa_shareholders',
         columns={
             'appointed': 'start_date',
             'ceased': 'end_date'},
-        desc='Rename date columns')
+        desc='Rename date columns on shareholders')
 
     dfl.duplicateDataset(
         dataset='src_ipa_shareholders',
         targetDatasets=[
             'shareholders_residential_addresses',
             'shareholders_postal_addresses'],
-        desc='Duplicate into two datasets, ready to union')
+        desc='Duplicate shareholders into two datasets, ready to union')
 
     # SHAREHOLDER RESIDENTIAL ADDRESSES
 
     dfl.dropColumns(
         dataset='shareholders_residential_addresses',
         colsToDrop=['postal_address'],
-        desc='Drop the postal address from the residential table')
+        desc='Drop the postal address from the sh residential table')
 
     dfl.renameColumns(
         dataset='shareholders_residential_addresses',
         columns={'residential_address': 'address_original'},
-        desc='Rename residential_address to address_original')
+        desc='Rename sh residential_address to address_original')
 
     dfl.addColumns(
         dataset='shareholders_residential_addresses',
         columns={'address_type': 'residential'},
-        desc='Add address_type type column')
+        desc='Add address_type type column: res shs')
 
     # SHAREHOLDER POSTAL ADDRESSES
 
     dfl.dropColumns(
         dataset='shareholders_postal_addresses',
         colsToDrop=['residential_address'],
-        desc='Drop the residential address from the postal table')
+        desc='Drop the sh residential address from the postal table')
 
     dfl.renameColumns(
         dataset='shareholders_postal_addresses',
         columns={'postal_address': 'address_original'},
-        desc='Rename postal_address to address_original')
+        desc='Rename sh postal_address to address_original')
 
     dfl.addColumns(
         dataset='shareholders_postal_addresses',
         columns={'address_type': 'postal'},
-        desc='Add address_type type column')
+        desc='Add address_type type column: postal shs')
 
     # UNION SHAREHOLDER ADDRESSES
 
@@ -454,7 +454,7 @@ def loadAddressesToODS(scheduler):
     dfl.addColumns(
         dataset='shareholder_addresses',
         columns={'src_table': 'SHAREHOLDERS'},
-        desc='Add column to indicate source table for these rows')
+        desc='Add column to indicate source table for sh addresses')
 
     # SECRETARIES
 
@@ -484,55 +484,55 @@ def loadAddressesToODS(scheduler):
             'ceased',
             'residential_address',
             'postal_address'],
-        desc='Drop unneeded columns')
+        desc='Drop unneeded columns from secretaries')
 
     dfl.renameColumns(
         dataset='src_ipa_secretaries',
         columns={
             'appointed': 'start_date',
             'ceased': 'end_date'},
-        desc='Rename date columns')
+        desc='Rename date columns on secretaries')
 
     dfl.duplicateDataset(
         dataset='src_ipa_secretaries',
         targetDatasets=[
             'secretaries_residential_addresses',
             'secretaries_postal_addresses'],
-        desc='Duplicate into two datasets, ready to union')
+        desc='Duplicate secretaries into two datasets, ready to union')
 
     # SECRETARY RESIDENTIAL ADDRESSES
 
     dfl.dropColumns(
         dataset='secretaries_residential_addresses',
         colsToDrop=['postal_address'],
-        desc='Drop the postal address from the residential table')
+        desc='Drop the postal address from the sec residential table')
 
     dfl.renameColumns(
         dataset='secretaries_residential_addresses',
         columns={'residential_address': 'address_original'},
-        desc='Rename residential_address to address_original')
+        desc='Rename sec residential_address to address_original')
 
     dfl.addColumns(
         dataset='secretaries_residential_addresses',
         columns={'address_type': 'residential'},
-        desc='Add address_type type column')
+        desc='Add address_type type column: res secs')
 
     # SECRETARY POSTAL ADDRESSES
 
     dfl.dropColumns(
         dataset='secretaries_postal_addresses',
         colsToDrop=['residential_address'],
-        desc='Drop the residential address from the postal table')
+        desc='Drop the sec residential address from the postal table')
 
     dfl.renameColumns(
         dataset='secretaries_postal_addresses',
         columns={'postal_address': 'address_original'},
-        desc='Rename postal_address to address_original')
+        desc='Rename sec postal_address to address_original')
 
     dfl.addColumns(
         dataset='secretaries_postal_addresses',
         columns={'address_type': 'postal'},
-        desc='Add address_type type column')
+        desc='Add address_type type column: postal secs')
 
     # UNION SECRETARY ADDRESSES
 
@@ -546,7 +546,7 @@ def loadAddressesToODS(scheduler):
     dfl.addColumns(
         dataset='secretary_addresses',
         columns={'src_table': 'SECRETARIES'},
-        desc='Add column to indicate source table for these rows')
+        desc='Add column to indicate source table for sec addresses')
 
     # ODS_ADDRESSES
 
@@ -594,7 +594,7 @@ def loadPostsToODS(scheduler):
             'post_id',
             'page_content_vector',
             'is_new'],
-        desc='Drop unneeded columns')
+        desc='Drop unneeded columns from documents')
 
     dfl.renameColumns(
         dataset='src_wp_documents',
@@ -664,7 +664,7 @@ def loadSrcLinksToODS(scheduler):
             'company_name_cleaned': 'target_node_cleaned',
             'appointment_date': 'start_date',
             'ceased': 'end_date'},
-        desc='Rename columns')
+        desc='Rename ods_people columns')
 
     dfl.addColumns(
         dataset='ods_people',
@@ -712,7 +712,7 @@ def loadSrcLinksToODS(scheduler):
             'company_shares_held_name_cleaned': 'target_node_cleaned',
             'appointment_date': 'start_date',
             'ceased': 'end_date'},
-        desc='Rename columns')
+        desc='Rename ods_companies columns')
 
     dfl.addColumns(
         dataset='ods_companies',

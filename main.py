@@ -16,7 +16,7 @@ scheduleConfig = {
     'DEFAULT_LOAD': True,
     'DEFAULT_SUMMARISE': True,
     'DEFAULT_DM_DATE': True,
-    'SRC_TABLES_TO_EXCLUDE_FROM_DEFAULT_EXTRACT': [
+    'SRC_TABLES_TO_EXCLUDE_FROM_DEFAULT_EXT': [
         'src_wp_documents'
     ],
     'TRG_TABLES_TO_EXCLUDE_FROM_DEFAULT_LOAD': [

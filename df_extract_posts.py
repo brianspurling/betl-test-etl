@@ -3,7 +3,7 @@ import betl
 
 def extractPosts(scheduler):
 
-    if scheduler.bulkOrDelta == 'BULK':
+    if scheduler.conf.exe.BULK_OR_DELTA == 'BULK':
 
         dfl = betl.DataFlow(desc='Extract WordPress posts from source')
 
@@ -20,5 +20,5 @@ def extractPosts(scheduler):
                   targetTableName='src_wp_documents',
                   dataLayerID='SRC')
 
-    elif scheduler.bulkOrDelta == 'DELTA':
+    elif scheduler.conf.exe.BULK_OR_DELTA == 'DELTA':
         pass
