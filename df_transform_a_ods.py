@@ -1,4 +1,3 @@
-import betl
 import pandas as pd
 
 
@@ -6,7 +5,7 @@ import pandas as pd
 # DATA PROCESSING FUNCS #
 #########################
 
-def loadCompaniesToODS(scheduler):
+def loadCompaniesToODS(betl):
 
     dfl = betl.DataFlow(
         desc='Extract companies from src_ipa_companies, and shareholder ' +
@@ -108,7 +107,7 @@ def loadCompaniesToODS(scheduler):
         dataLayerID='STG')
 
 
-def loadPeopleToODS(scheduler):
+def loadPeopleToODS(betl):
 
     dfl = betl.DataFlow(
         desc='Extract people from src_ipa_directors, _shareholders & ' +
@@ -247,7 +246,7 @@ def loadPeopleToODS(scheduler):
         dataLayerID='STG')
 
 
-def loadAddressesToODS(scheduler):
+def loadAddressesToODS(betl):
 
     dfl = betl.DataFlow(
         desc='Extract addresses from src_ipa_addresses (these are company ' +
@@ -581,7 +580,7 @@ def loadAddressesToODS(scheduler):
         dataLayerID='STG')
 
 
-def loadPostsToODS(scheduler):
+def loadPostsToODS(betl):
 
     dfl = betl.DataFlow(desc='Extract posts and load to ods')
 
@@ -633,7 +632,7 @@ def loadPostsToODS(scheduler):
         dataLayerID='STG')
 
 
-def loadSrcLinksToODS(scheduler):
+def loadSrcLinksToODS(betl):
 
     dfl = betl.DataFlow(
         desc='Start with all the people that are shareholders/directors/' +

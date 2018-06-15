@@ -1,7 +1,4 @@
-import betl
-
-
-def loadCompaniesToMRG(scheduler):
+def loadCompaniesToMRG(betl):
 
     dfl = betl.DataFlow(
         desc='Create a unique list of cleaned company names - we consider ' +
@@ -23,7 +20,7 @@ def loadCompaniesToMRG(scheduler):
         dataLayerID='STG')
 
 
-def loadPeopleToMRG(scheduler):
+def loadPeopleToMRG(betl):
 
     dfl = betl.DataFlow(
         desc='Create a unique list of cleaned person names - we consider ' +
@@ -45,7 +42,7 @@ def loadPeopleToMRG(scheduler):
         dataLayerID='STG')
 
 
-def loadAddressesToMRG(scheduler):
+def loadAddressesToMRG(betl):
 
     dfl = betl.DataFlow(
         desc='Create a unique list of cleaned addresses - we consider ' +
@@ -80,7 +77,7 @@ def loadAddressesToMRG(scheduler):
 # the same person), and hence we can solve that DQ issue (duplicated edge in
 # network graph) by deduping here.
 
-def loadSrcLinksToMRG(scheduler):
+def loadSrcLinksToMRG(betl):
 
     dfl = betl.DataFlow(
         desc='Create a unique list of src_links (should already be unique)')

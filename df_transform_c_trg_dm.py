@@ -1,7 +1,4 @@
-import betl
-
-
-def prepareDMLinkType(scheduler):
+def prepareDMLinkType(betl):
 
     dfl = betl.DataFlow(desc='Prep src_msd_dm_link_type data for default load')
 
@@ -13,7 +10,7 @@ def prepareDMLinkType(scheduler):
         dataLayerID='STG')
 
 
-def prepareDMRelationship(scheduler):
+def prepareDMRelationship(betl):
 
     dfl = betl.DataFlow(desc='Prep src_msd_dm_relationship data for ' +
                              'default load')
@@ -26,7 +23,7 @@ def prepareDMRelationship(scheduler):
         dataLayerID='STG')
 
 
-def prepareDMNode(scheduler):
+def prepareDMNode(betl):
 
     dfl = betl.DataFlow(desc='Prep dm_node data for default load')
 
@@ -79,7 +76,7 @@ def prepareDMNode(scheduler):
         dataLayerID='STG')
 
 
-def prepareDMCorruptionDoc(scheduler):
+def prepareDMCorruptionDoc(betl):
 
     dfl = betl.DataFlow(desc='Prep dm_corruption_doc data for default load')
 
@@ -107,7 +104,7 @@ def prepareDMCorruptionDoc(scheduler):
         dataLayerID='STG')
 
 
-def prepareDMAddress(scheduler):
+def prepareDMAddress(betl):
 
     dfl = betl.DataFlow(desc='Prep dm_addresses data for default load')
 
@@ -124,15 +121,11 @@ def prepareDMAddress(scheduler):
         dataLayerID='STG')
 
 
-def prepareDMAddressType(scheduler):
+def prepareDMAddressType(betl):
 
     dfl = betl.DataFlow(
         desc='Prep src_msd_dm_address_type and ods_addresses data for ' +
              'default load of dm_address_type')
-
-    colList = ['address_type_name',
-               'address_type',
-               'address_role']
 
     # ODS_ADDRESSES
 
@@ -155,7 +148,7 @@ def prepareDMAddressType(scheduler):
     # MSD ADDRESS_TYPE
 
     dfl.read(tableName='src_msd_dm_address_type', dataLayer='SRC')
-    
+
     # TRG_DM_ADDRESS_TYPE
 
     dfl.union(
@@ -169,7 +162,7 @@ def prepareDMAddressType(scheduler):
         dataLayerID='STG')
 
 
-def prepareDMNetworkMetric(scheduler):
+def prepareDMNetworkMetric(betl):
 
     dfl = betl.DataFlow(
         desc='Prep src_msd_dm_network_metric data for default load')

@@ -1,4 +1,3 @@
-import betl
 import pandas as pd
 
 ALL_CONTENT_CLEAN = None
@@ -8,7 +7,7 @@ DF_SU_MENTIONS = None
 DF_CORRUPTION_DOCS = None
 
 
-def buildSuMentions(scheduler):
+def buildSuMentions(betl):
 
     global ALL_CONTENT_CLEAN
     global ALL_CONTENT_ALPHA
@@ -16,7 +15,7 @@ def buildSuMentions(scheduler):
     global DF_SU_MENTIONS
     global DF_CORRUPTION_DOCS
 
-    if scheduler.conf.exe.BULK_OR_DELTA == 'BULK':
+    if betl.CONF.EXE.BULK_OR_DELTA == 'BULK':
 
         dfl = betl.DataFlow(
             desc='Build su_mentions by searching all docs for all node names')
@@ -101,13 +100,13 @@ def buildSuMentions(scheduler):
             append_or_replace='append',  # stops it removing SK!
             desc='Writing to summary DB layer')
 
-    elif scheduler.conf.exe.BULK_OR_DELTA == 'DELTA':
+    elif betl.CONF.EXE.BULK_OR_DELTA == 'DELTA':
         pass
 
 
-def writeBackMentions(scheduler):
+def writeBackMentions(betl):
 
-    if scheduler.conf.exe.BULK_OR_DELTA == 'BULK':
+    if betl.CONF.EXE.BULK_OR_DELTA == 'BULK':
         dfl = betl.DataFlow(
             desc='Write-back the mentions counts to dm_node and ' +
                  'dm_corruption_doc')
@@ -154,7 +153,7 @@ def writeBackMentions(scheduler):
 
         dfl.close()
 
-    elif scheduler.conf.exe.BULK_OR_DELTA == 'DELTA':
+    elif betl.CONF.EXE.BULK_OR_DELTA == 'DELTA':
         pass
 
 

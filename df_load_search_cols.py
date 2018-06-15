@@ -1,9 +1,6 @@
-import betl
+def createTextSearchColumns(betl):
 
-
-def createTextSearchColumns(scheduler):
-
-    if scheduler.conf.exe.BULK_OR_DELTA == 'BULK':
+    if betl.CONF.EXE.BULK_OR_DELTA == 'BULK':
 
         sql = ''
         sql += "UPDATE dm_corruption_doc \n"
@@ -32,5 +29,5 @@ def createTextSearchColumns(scheduler):
 
         dfl.close()
 
-    elif scheduler.conf.exe.BULK_OR_DELTA == 'DELTA':
+    elif betl.CONF.EXE.BULK_OR_DELTA == 'DELTA':
         pass

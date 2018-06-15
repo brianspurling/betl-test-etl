@@ -1,11 +1,10 @@
-import betl
 import datetime
 
 # TODO: having this as a global this breaks recovery mid-execution
 COL_LIST = None
 
 
-def generateLinks_C2P(scheduler):
+def generateLinks_C2P(betl):
 
     global COL_LIST
 
@@ -51,7 +50,7 @@ def generateLinks_C2P(scheduler):
         dataLayerID='STG')
 
 
-def generateLinks_P2P_prep(scheduler):
+def generateLinks_P2P_prep(betl):
 
     dfl = betl.DataFlow(
         desc='Prep for the generation of person-to-person (P2P) links ' +
@@ -81,7 +80,7 @@ def generateLinks_P2P_prep(scheduler):
         desc='Forcing this write to DB because the next step is custom SQL')
 
 
-def generateLinks_P2P_where(scheudler):
+def generateLinks_P2P_where(betl):
 
     sql = ''
     sql += "SELECT LEAST(l1.start_date, l2.start_date) AS start_date, \n"
@@ -145,7 +144,7 @@ def generateLinks_P2P_where(scheudler):
         dataLayerID='STG')
 
 
-def generateLinks_P2P_while(scheudler):
+def generateLinks_P2P_while(betl):
 
     sql = ''
     sql += "SELECT LEAST(l1.start_date, l2.start_date) AS start_date, \n"
@@ -216,7 +215,7 @@ def generateLinks_P2P_while(scheudler):
         dataLayerID='STG')
 
 
-def prepareFTLinks(scheduler):
+def prepareFTLinks(betl):
 
     dfl = betl.DataFlow(
         desc='Bring all our different link types together into a single ' +
