@@ -12,7 +12,9 @@ def loadCompaniesToODS(betl):
              'companies from src_ipa_shareholders. Clean them up, union ' +
              'them together, and output to ods_companies')
 
-    dfl.read(tableName='src_ipa_companies', dataLayer='SRC')
+    dfl.read(
+        tableName='src_ipa_companies',
+        dataLayer='SRC')
 
     dfl.dropColumns(
         dataset='src_ipa_companies',
@@ -35,7 +37,9 @@ def loadCompaniesToODS(betl):
             'is_shareholder': 'No'},
         desc='Add additional (blank) cols to match sh rows')
 
-    dfl.read('src_ipa_shareholders', 'SRC')
+    dfl.read(
+        tableName='src_ipa_shareholders',
+        dataLayer='SRC')
 
     dfl.filter(
         dataset='src_ipa_shareholders',

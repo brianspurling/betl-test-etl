@@ -125,7 +125,8 @@ def generateLinks_P2P_where(betl):
     dfl.customSQL(
         sql=sql,
         dataLayer='STG',
-        dataset='tmp_ft_links_generated_P2P_where')
+        dataset='tmp_ft_links_generated_P2P_where',
+        desc='Generating the P2P_where links')
 
     # TODO: need to sort this out. This is just a placeholder to make the
     # code work
@@ -196,7 +197,8 @@ def generateLinks_P2P_while(betl):
     dfl.customSQL(
         sql=sql,
         dataLayer='STG',
-        dataset='tmp_ft_links_generated_P2P_while')
+        dataset='tmp_ft_links_generated_P2P_while',
+        desc='Generating the P2P_while links')
 
     # TODO: need to sort this out. This is just a placeholder to make the
     # code work
