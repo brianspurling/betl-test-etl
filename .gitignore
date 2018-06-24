@@ -1,14 +1,15 @@
-# Data etc
+# BETL-specific
 tmp_data/
 logs/
 src_data/
 profiling/
-tmp_data*/
-.ipynb_checkpoints/
-*.ipynb
 sql_scripts/
 schemas/
 reports/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
