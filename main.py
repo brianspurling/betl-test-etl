@@ -24,10 +24,10 @@ scheduleConfig = {
         'ft_addresses_nodes',
         'ft_network_metrics'
     ],
-    'EXTRACT_DFS': [
+    'EXTRACT_DATAFLOWS': [
         df_extract_posts.extractPosts
     ],
-    'TRANSFORM_DFS': [
+    'TRANSFORM_DATAFLOWS': [
         df_transform_ods.loadCompaniesToODS,
         df_transform_ods.loadPeopleToODS,
         df_transform_ods.loadAddressesToODS,
@@ -50,10 +50,10 @@ scheduleConfig = {
         df_transform_ft.generateLinks_P2P_while,
         df_transform_ft.prepareFTLinks
     ],
-    'LOAD_DFS': [
+    'LOAD_DATAFLOWS': [
         df_load.createTextSearchColumns,
     ],
-    'SUMMARISE_DFS': [
+    'SUMMARISE_DATAFLOWS': [
         df_summarise.buildSuMentions,
         df_summarise.writeBackMentions
     ]
