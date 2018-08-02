@@ -72,24 +72,24 @@ def loadCompaniesToODS(betl):
                  'appointed': 'appointment_date'},
         desc='Rename cols')
 
-    dfl.cleanColumn(
+    dfl.applyFunctionToColumns(
         dataset='src_ipa_shareholders',
-        cleaningFunc=cleanCompanyName,
-        column='company_shares_held_name_original',
-        cleanedColumn='company_shares_held_name_cleaned',
+        function=cleanCompanyName,
+        columns='company_shares_held_name_original',
+        targetColumns='company_shares_held_name_cleaned',
         desc='Add a clean company_name column for the shares_held_in company')
 
-    dfl.cleanColumn(
+    dfl.applyFunctionToColumns(
         dataset='src_ipa_shareholders',
-        cleaningFunc=validateStringDates,
-        column='appointment_date',
+        function=validateStringDates,
+        columns='appointment_date',
         desc='Convert appointment_date to Date and back to Str (YYYYMMDD),' +
              ' remove NaNs')
 
-    dfl.cleanColumn(
+    dfl.applyFunctionToColumns(
         dataset='src_ipa_shareholders',
-        cleaningFunc=validateStringDates,
-        column='ceased',
+        function=validateStringDates,
+        columns='ceased',
         desc='Convert ceased date to Date and back to Str (YYYYMMDD),' +
              ' remove NaNs')
 
@@ -98,11 +98,11 @@ def loadCompaniesToODS(betl):
         targetDataset='ods_companies',
         desc='Union the two datasets')
 
-    dfl.cleanColumn(
+    dfl.applyFunctionToColumns(
         dataset='ods_companies',
-        cleaningFunc=cleanCompanyName,
-        column='company_name_original',
-        cleanedColumn='company_name_cleaned',
+        function=cleanCompanyName,
+        columns='company_name_original',
+        targetColumns='company_name_cleaned',
         desc="Add a cleaned company_name column for the node's company name")
 
     dfl.write(
@@ -212,35 +212,35 @@ def loadPeopleToODS(betl):
                  'company_name': 'company_name_original'},
         desc='Rename name cols to _name_original')
 
-    dfl.cleanColumn(
+    dfl.applyFunctionToColumns(
         dataset='ods_people',
-        cleaningFunc=cleanPersonName,
-        column='person_name_original',
-        cleanedColumn='person_name_cleaned',
+        function=cleanPersonName,
+        columns='person_name_original',
+        targetColumns='person_name_cleaned',
         desc='person_name is one or our node NKs, so we need to clean ' +
              'it to ensure we treat different variations of the same name ' +
              'as the same node')
 
-    dfl.cleanColumn(
+    dfl.applyFunctionToColumns(
         dataset='ods_people',
-        cleaningFunc=cleanCompanyName,
-        column='company_name_original',
-        cleanedColumn='company_name_cleaned',
+        function=cleanCompanyName,
+        columns='company_name_original',
+        targetColumns='company_name_cleaned',
         desc='company_name is one of our node NKs, so we need to clean ' +
              'it to ensure we treat different variations of the same name ' +
              'as the same node')
 
-    dfl.cleanColumn(
+    dfl.applyFunctionToColumns(
         dataset='ods_people',
-        cleaningFunc=validateStringDates,
-        column='appointment_date',
+        function=validateStringDates,
+        columns='appointment_date',
         desc='Convert appointment_date to Date and back to Str (YYYYMMDD),' +
              ' remove NaNs')
 
-    dfl.cleanColumn(
+    dfl.applyFunctionToColumns(
         dataset='ods_people',
-        cleaningFunc=validateStringDates,
-        column='ceased',
+        function=validateStringDates,
+        columns='ceased',
         desc='Convert ceased to Date and back to Str (YYYYMMDD),' +
              ' remove NaNs')
 
@@ -571,11 +571,11 @@ def loadAddressesToODS(betl):
         targetDataset='ods_addresses',
         desc='Union the four datasets')
 
-    dfl.cleanColumn(
+    dfl.applyFunctionToColumns(
         dataset='ods_addresses',
-        cleaningFunc=cleanAddress,
-        column='address_original',
-        cleanedColumn='address_cleaned',
+        function=cleanAddress,
+        columns='address_original',
+        targetColumns='address_cleaned',
         desc="Clean the addresses")
 
     dfl.write(
@@ -623,11 +623,11 @@ def loadPostsToODS(betl):
         desc='Create a corruption_doc_status, preserving the original post ' +
              'status')
 
-    dfl.cleanColumn(
+    dfl.applyFunctionToColumns(
         dataset='src_wp_documents',
-        cleaningFunc=cleanPostContent,
-        column='corruption_doc_content',
-        cleanedColumn='corruption_doc_content_cleaned',
+        function=cleanPostContent,
+        columns='corruption_doc_content',
+        targetColumns='corruption_doc_content_cleaned',
         desc="Clean the post content")
 
     dfl.write(

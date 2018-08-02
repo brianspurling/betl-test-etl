@@ -47,7 +47,7 @@ def buildSuMentions(betl):
         DF_MENTIONED_NODES = pd.DataFrame(
             columns=['node_id', 'name', 'name_alphanumeric'])
 
-        dfl.iterate(
+        dfl.applyFunctionToRows(
             dataset='dm_node',
             function=searchAllContentForNodeName,
             desc='Identifing all nodes mentioned somewhere. This is the ' +
@@ -72,7 +72,7 @@ def buildSuMentions(betl):
         # TODO: urgh, global var here, is there a better way?
         DF_CORRUPTION_DOCS = dfl.getDataFrames(datasets='dm_corruption_doc')
 
-        dfl.iterate(
+        dfl.applyFunctionToRows(
             dataset='mentioned_nodes',
             function=searchDMCorruptionDocsForMentionedNodeNames,
             desc='Using our new list of mentioned nodes, now create ' +

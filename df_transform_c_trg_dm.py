@@ -56,11 +56,11 @@ def prepareDMNode(betl):
         targetDataset='trg_dm_node',
         desc='Union the two datasets')
 
-    dfl.cleanColumn(
+    dfl.applyFunctionToColumns(
         dataset='trg_dm_node',
-        cleaningFunc=alphnumericName,
-        column='name',
-        cleanedColumn='name_alphanumeric',
+        function=alphnumericName,
+        columns='name',
+        targetColumns='name_alphanumeric',
         desc="Create an alphanumeric-only name")
 
     dfl.addColumns(
@@ -82,11 +82,11 @@ def prepareDMCorruptionDoc(betl):
 
     dfl.read(tableName='ods_posts', dataLayer='STG')
 
-    dfl.cleanColumn(
+    dfl.applyFunctionToColumns(
         dataset='ods_posts',
-        cleaningFunc=alphnumericName,
-        column='corruption_doc_content',
-        cleanedColumn='corruption_doc_content_alphanumeric',
+        function=alphnumericName,
+        columns='corruption_doc_content',
+        targetColumns='corruption_doc_content_alphanumeric',
         desc="Create alphanumeric-only content")
 
     dfl.addColumns(

@@ -38,10 +38,10 @@ def generateLinks_C2P(betl):
         columns={'link_type': setLinkType},
         desc='Set value of link_type column by flipping C2P & P2C')
 
-    dfl.cleanColumn(
+    dfl.applyFunctionToColumns(
         dataset='mrg_src_links',
-        cleaningFunc=setRelationship,
-        column='relationship',
+        function=setRelationship,
+        columns='relationship',
         desc="Set the value of the relationship column by flipping of & by")
 
     dfl.write(
