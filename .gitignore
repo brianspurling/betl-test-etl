@@ -4,7 +4,7 @@ logs/
 src_data/
 profiling/
 sql_scripts/
-schemas/
+schema/
 reports/
 
 # Jupyter Notebooks
