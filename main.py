@@ -1,6 +1,6 @@
 import sys
 
-from betl import Betl
+import betl
 
 import df_extract_posts
 import df_transform_a_ods as df_transform_ods
@@ -59,8 +59,8 @@ scheduleConfig = {
     ]
 }
 
-betl = Betl(appConfigFile='./appConfig.ini',
-            scheduleConfig=scheduleConfig,
-            runTimeParams=sys.argv)
+pl = betl.Pipeline(appConfigFile='./appConfig.ini',
+                   scheduleConfig=scheduleConfig,
+                   runTimeParams=sys.argv)
 
-betl.run()
+pl.run()
