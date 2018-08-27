@@ -14,7 +14,7 @@ def createTextSearchColumns(betl):
 
         dfl.customSQL(
             sql=sql,
-            dataLayer='TRG',
+            dataLayer='BSE',
             desc='Setting corruption_doc_tsvector on dm_corruption_doc')
 
         sql = ''
@@ -24,7 +24,7 @@ def createTextSearchColumns(betl):
 
         dfl.customSQL(
             sql=sql,
-            dataLayer='TRG',
+            dataLayer='BSE',
             desc='Setting name_tsquery on dm_node')
 
         dfl.close()

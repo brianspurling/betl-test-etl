@@ -16,9 +16,9 @@ def extractPosts(betl):
             desc="Set the audit columns on WP.documents")
 
         dfl.write(dataset='documents',
-                  targetTableName='src_wp_documents',
-                  dataLayerID='SRC',
-                  desc="Write documents data to SRC data layer")
+                  targetTableName='wp_documents',
+                  dataLayerID='EXT',
+                  desc="Write documents data to EXT data layer")
 
     elif betl.CONF.EXE.BULK_OR_DELTA == 'DELTA':
         pass

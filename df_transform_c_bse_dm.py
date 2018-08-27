@@ -1,33 +1,30 @@
 def prepareDMLinkType(betl):
 
-    dfl = betl.DataFlow(desc='Prep src_msd_dm_link_type data for default load')
+    dfl = betl.DataFlow(desc='Prep msd_dm_link_type data for default load')
 
-    dfl.read(tableName='src_msd_dm_link_type', dataLayer='SRC')
+    dfl.read(tableName='msd_dm_link_type', dataLayer='EXT')
 
-    dfl.write(
-        dataset='src_msd_dm_link_type',
-        targetTableName='trg_dm_link_type',
-        dataLayerID='STG')
+    dfl.prepForLoad(dataset='msd_dm_link_type',
+                    targetTableName='dm_link_type')
 
 
 def prepareDMRelationship(betl):
 
-    dfl = betl.DataFlow(desc='Prep src_msd_dm_relationship data for ' +
+    dfl = betl.DataFlow(desc='Prep msd_dm_relationship data for ' +
                              'default load')
 
-    dfl.read(tableName='src_msd_dm_relationship', dataLayer='SRC')
+    dfl.read(tableName='msd_dm_relationship', dataLayer='EXT')
 
-    dfl.write(
-        dataset='src_msd_dm_relationship',
-        targetTableName='trg_dm_relationship',
-        dataLayerID='STG')
+    dfl.prepForLoad(
+        dataset='msd_dm_relationship',
+        targetTableName='dm_relationship')
 
 
 def prepareDMNode(betl):
 
     dfl = betl.DataFlow(desc='Prep dm_node data for default load')
 
-    dfl.read(tableName='mrg_companies', dataLayer='STG')
+    dfl.read(tableName='mrg_companies', dataLayer='TRN')
 
     dfl.renameColumns(
         dataset='mrg_companies',
@@ -39,7 +36,7 @@ def prepareDMNode(betl):
         columns={'node_type': 'company'},
         desc='Add column: node_type = company')
 
-    dfl.read(tableName='mrg_people', dataLayer='STG')
+    dfl.read(tableName='mrg_people', dataLayer='TRN')
 
     dfl.renameColumns(
         dataset='mrg_people',
@@ -53,34 +50,31 @@ def prepareDMNode(betl):
 
     dfl.union(
         datasets=['mrg_companies', 'mrg_people'],
-        targetDataset='trg_dm_node',
+        targetDataset='dm_node',
         desc='Union the two datasets')
 
     dfl.applyFunctionToColumns(
-        dataset='trg_dm_node',
+        dataset='dm_node',
         function=alphnumericName,
         columns='name',
         targetColumns='name_alphanumeric',
         desc="Create an alphanumeric-only name")
 
     dfl.addColumns(
-        dataset='trg_dm_node',
+        dataset='dm_node',
         columns={'name_tsquery': None,
                  'is_mentioned_in_docs': None,
                  'mentions_count': None},
         desc='Add empty columns (to be populated later)')
 
-    dfl.write(
-        dataset='trg_dm_node',
-        targetTableName='trg_dm_node',
-        dataLayerID='STG')
+    dfl.prepForLoad(dataset='dm_node')
 
 
 def prepareDMCorruptionDoc(betl):
 
     dfl = betl.DataFlow(desc='Prep dm_corruption_doc data for default load')
 
-    dfl.read(tableName='ods_posts', dataLayer='STG')
+    dfl.read(tableName='ods_posts', dataLayer='TRN')
 
     dfl.applyFunctionToColumns(
         dataset='ods_posts',
@@ -98,38 +92,36 @@ def prepareDMCorruptionDoc(betl):
         desc='Add 4 columns: number_mentioned_*, and tsvector, ' +
              ' (to be populated later)')
 
-    dfl.write(
+    dfl.prepForLoad(
         dataset='ods_posts',
-        targetTableName='trg_dm_corruption_doc',
-        dataLayerID='STG')
+        targetTableName='dm_corruption_doc')
 
 
 def prepareDMAddress(betl):
 
     dfl = betl.DataFlow(desc='Prep dm_addresses data for default load')
 
-    dfl.read(tableName='mrg_addresses', dataLayer='STG')
+    dfl.read(tableName='mrg_addresses', dataLayer='TRN')
 
     dfl.renameColumns(
         dataset='mrg_addresses',
         columns={'address_cleaned': 'address'},
         desc='Rename column: address to address_cleaned')
 
-    dfl.write(
+    dfl.prepForLoad(
         dataset='mrg_addresses',
-        targetTableName='trg_dm_address',
-        dataLayerID='STG')
+        targetTableName='dm_address')
 
 
 def prepareDMAddressType(betl):
 
     dfl = betl.DataFlow(
-        desc='Prep src_msd_dm_address_type and ods_addresses data for ' +
+        desc='Prep msd_dm_address_type and ods_addresses data for ' +
              'default load of dm_address_type')
 
     # ODS_ADDRESSES
 
-    dfl.read(tableName='ods_addresses', dataLayer='STG')
+    dfl.read(tableName='ods_addresses', dataLayer='TRN')
 
     dfl.dropColumns(
         dataset='ods_addresses',
@@ -147,32 +139,28 @@ def prepareDMAddressType(betl):
 
     # MSD ADDRESS_TYPE
 
-    dfl.read(tableName='src_msd_dm_address_type', dataLayer='SRC')
+    dfl.read(tableName='msd_dm_address_type', dataLayer='EXT')
 
-    # TRG_DM_ADDRESS_TYPE
+    # DM_ADDRESS_TYPE
 
     dfl.union(
-        datasets=['ods_addresses', 'src_msd_dm_address_type'],
-        targetDataset='trg_dm_address_type',
+        datasets=['ods_addresses', 'msd_dm_address_type'],
+        targetDataset='dm_address_type',
         desc='Union the two datasets')
 
-    dfl.write(
-        dataset='trg_dm_address_type',
-        targetTableName='trg_dm_address_type',
-        dataLayerID='STG')
+    dfl.prepForLoad(dataset='dm_address_type')
 
 
 def prepareDMNetworkMetric(betl):
 
     dfl = betl.DataFlow(
-        desc='Prep src_msd_dm_network_metric data for default load')
+        desc='Prep msd_dm_network_metric data for default load')
 
-    dfl.read(tableName='src_msd_dm_network_metric', dataLayer='SRC')
+    dfl.read(tableName='msd_dm_network_metric', dataLayer='EXT')
 
-    dfl.write(
-        dataset='src_msd_dm_network_metric',
-        targetTableName='trg_dm_network_metric',
-        dataLayerID='STG')
+    dfl.prepForLoad(
+        dataset='msd_dm_network_metric',
+        targetTableName='dm_network_metric')
 
 
 ####################

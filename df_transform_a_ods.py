@@ -8,26 +8,26 @@ import pandas as pd
 def loadCompaniesToODS(betl):
 
     dfl = betl.DataFlow(
-        desc='Extract companies from src_ipa_companies, and shareholder ' +
-             'companies from src_ipa_shareholders. Clean them up, union ' +
+        desc='Extract companies from ipa_companies, and shareholder ' +
+             'companies from ipa_shareholders. Clean them up, union ' +
              'them together, and output to ods_companies')
 
     dfl.read(
-        tableName='src_ipa_companies',
-        dataLayer='SRC')
+        tableName='ipa_companies',
+        dataLayer='EXT')
 
     dfl.dropColumns(
-        dataset='src_ipa_companies',
+        dataset='ipa_companies',
         colsToKeep=['company_number', 'company_name'],
         desc='Drop all cols except name and number')
 
     dfl.renameColumns(
-        dataset='src_ipa_companies',
+        dataset='ipa_companies',
         columns={'company_name': 'company_name_original'},
         desc='Rename company_name to company_name_original')
 
     dfl.addColumns(
-        dataset='src_ipa_companies',
+        dataset='ipa_companies',
         columns={
             'appointment_date': None,
             'ceased': None,
@@ -38,16 +38,16 @@ def loadCompaniesToODS(betl):
         desc='Add additional (blank) cols to match sh rows')
 
     dfl.read(
-        tableName='src_ipa_shareholders',
-        dataLayer='SRC')
+        tableName='ipa_shareholders',
+        dataLayer='EXT')
 
     dfl.filter(
-        dataset='src_ipa_shareholders',
+        dataset='ipa_shareholders',
         filters={'is_company': '1'},
         desc='Filter company shareholders')
 
     dfl.dropColumns(
-        dataset='src_ipa_shareholders',
+        dataset='ipa_shareholders',
         colsToKeep=[
             'name',
             'shareholding_company_number',
@@ -58,13 +58,13 @@ def loadCompaniesToODS(betl):
         desc='Drop cols to make shareholder dataset compatible')
 
     dfl.addColumns(
-        dataset='src_ipa_shareholders',
+        dataset='ipa_shareholders',
         columns={'is_shareholder': 'YES',
                  'company_shares_held_name_cleaned': None},
         desc='Add is_shareholder and name_cleaned cols')
 
     dfl.renameColumns(
-        dataset='src_ipa_shareholders',
+        dataset='ipa_shareholders',
         columns={'name': 'company_name_original',
                  'shareholding_company_number': 'company_number',
                  'company_name': 'company_shares_held_name_original',
@@ -73,28 +73,28 @@ def loadCompaniesToODS(betl):
         desc='Rename cols')
 
     dfl.applyFunctionToColumns(
-        dataset='src_ipa_shareholders',
+        dataset='ipa_shareholders',
         function=cleanCompanyName,
         columns='company_shares_held_name_original',
         targetColumns='company_shares_held_name_cleaned',
         desc='Add a clean company_name column for the shares_held_in company')
 
     dfl.applyFunctionToColumns(
-        dataset='src_ipa_shareholders',
+        dataset='ipa_shareholders',
         function=validateStringDates,
         columns='appointment_date',
         desc='Convert appointment_date to Date and back to Str (YYYYMMDD),' +
              ' remove NaNs')
 
     dfl.applyFunctionToColumns(
-        dataset='src_ipa_shareholders',
+        dataset='ipa_shareholders',
         function=validateStringDates,
         columns='ceased',
         desc='Convert ceased date to Date and back to Str (YYYYMMDD),' +
              ' remove NaNs')
 
     dfl.union(
-        datasets=['src_ipa_companies', 'src_ipa_shareholders'],
+        datasets=['ipa_companies', 'ipa_shareholders'],
         targetDataset='ods_companies',
         desc='Union the two datasets')
 
@@ -108,16 +108,16 @@ def loadCompaniesToODS(betl):
     dfl.write(
         dataset='ods_companies',
         targetTableName='ods_companies',
-        dataLayerID='STG')
+        dataLayerID='TRN')
 
 
 def loadPeopleToODS(betl):
 
     dfl = betl.DataFlow(
-        desc='Extract people from src_ipa_directors, _shareholders & ' +
+        desc='Extract people from ipa_directors, _shareholders & ' +
              '_secretaries, combine into a single dataset and clean up a bit')
 
-    trgCols = [
+    bseCols = [
         'name',
         'company_name',
         'appointment_date',
@@ -129,80 +129,80 @@ def loadPeopleToODS(betl):
 
     # DIRECTORS
 
-    dfl.read(tableName='src_ipa_directors', dataLayer='SRC')
+    dfl.read(tableName='ipa_directors', dataLayer='EXT')
 
     dfl.addColumns(
-        dataset='src_ipa_directors',
+        dataset='ipa_directors',
         columns={'role_type': 'DIRECTOR'},
         desc='Add column indicating these are directors')
 
     dfl.dropColumns(
-        dataset='src_ipa_directors',
-        colsToKeep=trgCols,
+        dataset='ipa_directors',
+        colsToKeep=bseCols,
         desc='Drop cols to make directors dataset compatible')
 
     # SHAREHOLDERS
 
-    dfl.read(tableName='src_ipa_shareholders', dataLayer='SRC')
+    dfl.read(tableName='ipa_shareholders', dataLayer='EXT')
 
     dfl.filter(
-        dataset='src_ipa_shareholders',
+        dataset='ipa_shareholders',
         filters={'is_company': '0'},
         desc='Filter to human shareholders')
 
     dfl.addColumns(
-        dataset='src_ipa_shareholders',
+        dataset='ipa_shareholders',
         columns={'role_type': 'SHAREHOLDER'},
         desc='Add column indicating these are shareholders')
 
     dfl.dropColumns(
-        dataset='src_ipa_shareholders',
+        dataset='ipa_shareholders',
         colsToDrop=['appointment_date'],
         desc='Drop the appointment_date column from sh (we will use the ' +
              'appointed col instead)')
 
     dfl.renameColumns(
-        dataset='src_ipa_shareholders',
+        dataset='ipa_shareholders',
         columns={'appointed': 'appointment_date'},
         desc='Rename appointed to appointment_date')
 
     dfl.dropColumns(
-        dataset='src_ipa_shareholders',
-        colsToKeep=trgCols,
+        dataset='ipa_shareholders',
+        colsToKeep=bseCols,
         desc='Drop cols to make shareholders dataset compatible')
 
     # SECRETARIES
 
-    dfl.read(tableName='src_ipa_secretaries', dataLayer='SRC')
+    dfl.read(tableName='ipa_secretaries', dataLayer='EXT')
 
     dfl.addColumns(
-        dataset='src_ipa_secretaries',
+        dataset='ipa_secretaries',
         columns={'role_type': 'SECRETARY'},
         desc='Add column indicating these are secretaries')
 
     dfl.dropColumns(
-        dataset='src_ipa_secretaries',
+        dataset='ipa_secretaries',
         colsToDrop=['appointment_date'],
         desc='Drop the appointment_date column from secs (we will use ' +
              'the appointed col instead)')
 
     dfl.renameColumns(
-        dataset='src_ipa_secretaries',
+        dataset='ipa_secretaries',
         columns={'appointed_date': 'appointment_date'},
         desc='Rename appointed_date to appointment_date')
 
     dfl.dropColumns(
-        dataset='src_ipa_secretaries',
-        colsToKeep=trgCols,
+        dataset='ipa_secretaries',
+        colsToKeep=bseCols,
         desc='Drop cols to make secretaries datasets compatible')
 
     # ODS_PEOPLE
 
     dfl.union(
         datasets=[
-            'src_ipa_directors',
-            'src_ipa_shareholders',
-            'src_ipa_secretaries'],
+            'ipa_directors',
+            'ipa_shareholders',
+            'ipa_secretaries'],
         targetDataset='ods_people',
         desc='Union the three datasets')
 
@@ -247,19 +247,19 @@ def loadPeopleToODS(betl):
     dfl.write(
         dataset='ods_people',
         targetTableName='ods_people',
-        dataLayerID='STG')
+        dataLayerID='TRN')
 
 
 def loadAddressesToODS(betl):
 
     dfl = betl.DataFlow(
-        desc='Extract addresses from src_ipa_addresses (these are company ' +
+        desc='Extract addresses from ipa_addresses (these are company ' +
              'addresses), and the directors/shareholders/seretaries tables ' +
              '(these are people addresses)')
 
     # COMPANY ADDRESSES
 
-    dfl.read(tableName='src_ipa_addresses', dataLayer='SRC')
+    dfl.read(tableName='ipa_addresses', dataLayer='EXT')
 
     # company_name,
     # company_number,
@@ -269,18 +269,18 @@ def loadAddressesToODS(betl):
     # end_date
 
     dfl.renameColumns(
-        dataset='src_ipa_addresses',
+        dataset='ipa_addresses',
         columns={'address': 'address_original'},
         desc='Rename address to address_original')
 
     dfl.addColumns(
-        dataset='src_ipa_addresses',
+        dataset='ipa_addresses',
         columns={'src_table': 'ADDRESSES'},
         desc='Add column to indicate source table for company addresses rows')
 
     # DIRECTOR'S ADDRSSES
 
-    dfl.read(tableName='src_ipa_directors', dataLayer='SRC')
+    dfl.read(tableName='ipa_directors', dataLayer='EXT')
 
     # company_name,
     # company_number,
@@ -293,7 +293,7 @@ def loadAddressesToODS(betl):
     # ceased
 
     dfl.dropColumns(
-        dataset='src_ipa_directors',
+        dataset='ipa_directors',
         colsToDrop=[
             'name',
             'nationality',
@@ -301,14 +301,14 @@ def loadAddressesToODS(betl):
         desc='Drop unneeded columns from directors')
 
     dfl.renameColumns(
-        dataset='src_ipa_directors',
+        dataset='ipa_directors',
         columns={
             'appointment_date': 'start_date',
             'ceased': 'end_date'},
         desc='Rename date columns on directors')
 
     dfl.duplicateDataset(
-        dataset='src_ipa_directors',
+        dataset='ipa_directors',
         targetDatasets=[
             'director_residential_addresses',
             'director_postal_addresses'],
@@ -364,7 +364,7 @@ def loadAddressesToODS(betl):
 
     # SHAREHOLDERS
 
-    dfl.read(tableName='src_ipa_shareholders', dataLayer='SRC')
+    dfl.read(tableName='ipa_shareholders', dataLayer='EXT')
 
     # company_name,
     # company_number,
@@ -387,7 +387,7 @@ def loadAddressesToODS(betl):
     # appointment_date,
 
     dfl.dropColumns(
-        dataset='src_ipa_shareholders',
+        dataset='ipa_shareholders',
         colsToKeep=[
             'company_name',
             'company_number',
@@ -398,14 +398,14 @@ def loadAddressesToODS(betl):
         desc='Drop unneeded columns from shareholders')
 
     dfl.renameColumns(
-        dataset='src_ipa_shareholders',
+        dataset='ipa_shareholders',
         columns={
             'appointed': 'start_date',
             'ceased': 'end_date'},
         desc='Rename date columns on shareholders')
 
     dfl.duplicateDataset(
-        dataset='src_ipa_shareholders',
+        dataset='ipa_shareholders',
         targetDatasets=[
             'shareholders_residential_addresses',
             'shareholders_postal_addresses'],
@@ -461,7 +461,7 @@ def loadAddressesToODS(betl):
 
     # SECRETARIES
 
-    dfl.read(tableName='src_ipa_secretaries', dataLayer='SRC')
+    dfl.read(tableName='ipa_secretaries', dataLayer='EXT')
 
     # company_name,
     # company_number,
@@ -479,7 +479,7 @@ def loadAddressesToODS(betl):
     # appointed,
 
     dfl.dropColumns(
-        dataset='src_ipa_secretaries',
+        dataset='ipa_secretaries',
         colsToKeep=[
             'company_name',
             'company_number',
@@ -490,14 +490,14 @@ def loadAddressesToODS(betl):
         desc='Drop unneeded columns from secretaries')
 
     dfl.renameColumns(
-        dataset='src_ipa_secretaries',
+        dataset='ipa_secretaries',
         columns={
             'appointed': 'start_date',
             'ceased': 'end_date'},
         desc='Rename date columns on secretaries')
 
     dfl.duplicateDataset(
-        dataset='src_ipa_secretaries',
+        dataset='ipa_secretaries',
         targetDatasets=[
             'secretaries_residential_addresses',
             'secretaries_postal_addresses'],
@@ -560,11 +560,11 @@ def loadAddressesToODS(betl):
     # end_date
     # company_name
     # company_number
-    # src_table
+    # table
 
     dfl.union(
         datasets=[
-            'src_ipa_addresses',
+            'ipa_addresses',
             'director_addresses',
             'shareholder_addresses',
             'secretary_addresses'],
@@ -581,17 +581,17 @@ def loadAddressesToODS(betl):
     dfl.write(
         dataset='ods_addresses',
         targetTableName='ods_addresses',
-        dataLayerID='STG')
+        dataLayerID='TRN')
 
 
 def loadPostsToODS(betl):
 
     dfl = betl.DataFlow(desc='Extract posts and load to ods')
 
-    dfl.read(tableName='src_wp_documents', dataLayer='SRC')
+    dfl.read(tableName='wp_documents', dataLayer='EXT')
 
     dfl.dropColumns(
-        dataset='src_wp_documents',
+        dataset='wp_documents',
         colsToDrop=[
             'src_id',
             'post_id',
@@ -600,7 +600,7 @@ def loadPostsToODS(betl):
         desc='Drop unneeded columns from documents')
 
     dfl.renameColumns(
-        dataset='src_wp_documents',
+        dataset='wp_documents',
         columns={'id_src': 'nk_post_id',
                  'post_content': 'corruption_doc_content',
                  'post_name': 'corruption_doc_name',
@@ -610,30 +610,30 @@ def loadPostsToODS(betl):
                  'post_type': 'post_type'},
         desc='Rename columns ("post_" -> "corruption_")')
 
-    dfl.dedupe(dataset='src_wp_documents',
+    dfl.dedupe(dataset='wp_documents',
                desc='Remove multiple copies of the same posts (WordPress ' +
                     'post versions, perhaps?)')
 
     dfl.addColumns(
-        dataset='src_wp_documents',
+        dataset='wp_documents',
         columns={
             'corruption_doc_status': dfl.getColumns(
-                                        dataset='src_wp_documents',
+                                        dataset='wp_documents',
                                         columnNames='post_status')},
         desc='Create a corruption_doc_status, preserving the original post ' +
              'status')
 
     dfl.applyFunctionToColumns(
-        dataset='src_wp_documents',
+        dataset='wp_documents',
         function=cleanPostContent,
         columns='corruption_doc_content',
         targetColumns='corruption_doc_content_cleaned',
         desc="Clean the post content")
 
     dfl.write(
-        dataset='src_wp_documents',
+        dataset='wp_documents',
         targetTableName='ods_posts',
-        dataLayerID='STG')
+        dataLayerID='TRN')
 
 
 def loadSrcLinksToODS(betl):
@@ -644,7 +644,7 @@ def loadSrcLinksToODS(betl):
 
     # ODS_PEOPLE
 
-    dfl.read(tableName='ods_people', dataLayer='STG')
+    dfl.read(tableName='ods_people', dataLayer='TRN')
 
     dfl.dropColumns(
         dataset='ods_people',
@@ -688,7 +688,7 @@ def loadSrcLinksToODS(betl):
 
     # COMPANY SHAREHOLDERS (ODS_COMPANIES)
 
-    dfl.read(tableName='ods_companies', dataLayer='STG')
+    dfl.read(tableName='ods_companies', dataLayer='TRN')
 
     dfl.filter(
         dataset='ods_companies',
@@ -726,7 +726,7 @@ def loadSrcLinksToODS(betl):
             'target_node_type': 'company'},
         desc='Add link_type (C2C) and relationship (sh_of) columns')
 
-    # ODS_SRC_LINKS
+    # ODS_LINKS
 
     dfl.union(
         datasets=[
@@ -738,7 +738,7 @@ def loadSrcLinksToODS(betl):
     dfl.write(
         dataset='ods_src_links',
         targetTableName='ods_src_links',
-        dataLayerID='STG')
+        dataLayerID='TRN')
 
 
 #####################

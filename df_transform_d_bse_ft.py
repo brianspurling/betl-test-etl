@@ -12,7 +12,7 @@ def generateLinks_C2P(betl):
         desc='Generate the company-to-person (C2P) links by flipping the ' +
              'P2C links')
 
-    dfl.read(tableName='mrg_src_links', dataLayer='STG')
+    dfl.read(tableName='mrg_src_links', dataLayer='TRN')
 
     dfl.addColumns(
         dataset='mrg_src_links',
@@ -47,7 +47,7 @@ def generateLinks_C2P(betl):
     dfl.write(
         dataset='mrg_src_links',
         targetTableName='tmp_ft_links_generated_C2P',
-        dataLayerID='STG')
+        dataLayerID='TRN')
 
 
 def generateLinks_P2P_prep(betl):
@@ -56,7 +56,7 @@ def generateLinks_P2P_prep(betl):
         desc='Prep for the generation of person-to-person (P2P) links ' +
              'by flipping the writing all P2C links to a temp DB table')
 
-    dfl.read(tableName='mrg_src_links', dataLayer='STG')
+    dfl.read(tableName='mrg_src_links', dataLayer='TRN')
 
     dfl.addColumns(
         dataset='mrg_src_links',
@@ -73,7 +73,7 @@ def generateLinks_P2P_prep(betl):
     dfl.write(
         dataset='mrg_src_links',
         targetTableName='tmp_ft_links_src_grouped',
-        dataLayerID='STG',
+        dataLayerID='TRN',
         forceDBWrite=True,
         # TODO: ideally the framework would take care of this
         dtype={'start_date': 'text'},
@@ -124,7 +124,7 @@ def generateLinks_P2P_where(betl):
 
     dfl.customSQL(
         sql=sql,
-        dataLayer='STG',
+        dataLayer='TRN',
         dataset='tmp_ft_links_generated_P2P_where',
         desc='Generating the P2P_where links')
 
@@ -142,7 +142,7 @@ def generateLinks_P2P_where(betl):
     dfl.write(
         dataset='tmp_ft_links_generated_P2P_where',
         targetTableName='tmp_ft_links_generated_P2P_where',
-        dataLayerID='STG')
+        dataLayerID='TRN')
 
 
 def generateLinks_P2P_while(betl):
@@ -196,7 +196,7 @@ def generateLinks_P2P_while(betl):
 
     dfl.customSQL(
         sql=sql,
-        dataLayer='STG',
+        dataLayer='TRN',
         dataset='tmp_ft_links_generated_P2P_while',
         desc='Generating the P2P_while links')
 
@@ -214,7 +214,7 @@ def generateLinks_P2P_while(betl):
     dfl.write(
         dataset='tmp_ft_links_generated_P2P_while',
         targetTableName='tmp_ft_links_generated_P2P_while',
-        dataLayerID='STG')
+        dataLayerID='TRN')
 
 
 def prepareFTLinks(betl):
@@ -223,20 +223,20 @@ def prepareFTLinks(betl):
         desc='Bring all our different link types together into a single ' +
              'dataset')
 
-    dfl.read(tableName='tmp_ft_links_generated_C2P', dataLayer='STG')
-    dfl.read(tableName='tmp_ft_links_generated_P2P_where', dataLayer='STG')
-    dfl.read(tableName='tmp_ft_links_generated_P2P_while', dataLayer='STG')
+    dfl.read(tableName='tmp_ft_links_generated_C2P', dataLayer='TRN')
+    dfl.read(tableName='tmp_ft_links_generated_P2P_where', dataLayer='TRN')
+    dfl.read(tableName='tmp_ft_links_generated_P2P_while', dataLayer='TRN')
 
     dfl.union(
         datasets=[
             'tmp_ft_links_generated_C2P',
             'tmp_ft_links_generated_P2P_where',
             'tmp_ft_links_generated_P2P_while'],
-        targetDataset='trg_ft_links',
+        targetDataset='ft_links',
         desc='Union the three datasets')
 
     dfl.addColumns(
-        dataset='trg_ft_links',
+        dataset='ft_links',
         columns={
             'nk_origin_node': setNKCols_originNode,
             'nk_target_node': setNKCols_targetNode,
@@ -244,7 +244,7 @@ def prepareFTLinks(betl):
         desc='Set the NK nodes')
 
     dfl.renameColumns(
-        dataset='trg_ft_links',
+        dataset='ft_links',
         columns={
             'link_type': 'nk_link_type',
             'relationship': 'nk_relationship',
@@ -254,7 +254,7 @@ def prepareFTLinks(betl):
         desc='Rename the other NK columns to nk_')
 
     dfl.dropColumns(
-        dataset='trg_ft_links',
+        dataset='ft_links',
         colsToDrop=[
             'origin_node_cleaned',
             'origin_node_type',
@@ -265,14 +265,11 @@ def prepareFTLinks(betl):
         desc='Drop unneeded cols')
 
     dfl.addColumns(
-        dataset='trg_ft_links',
+        dataset='ft_links',
         columns={'dd_duration': calculateDuration},
         desc='Add a duration degenerate dimension')
 
-    dfl.write(
-        dataset='trg_ft_links',
-        targetTableName='trg_ft_links',
-        dataLayerID='STG')
+    dfl.prepForLoad(dataset='ft_links')
 
 
 #####################

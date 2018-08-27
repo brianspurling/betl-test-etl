@@ -24,12 +24,12 @@ def buildSuMentions(betl):
 
         dfl.read(
             tableName='dm_corruption_doc',
-            dataLayer='TRG',
+            dataLayer='BSE',
             forceDBRead=True)
 
         dfl.read(
             tableName='dm_node',
-            dataLayer='TRG',
+            dataLayer='BSE',
             forceDBRead=True)
 
         cols = dfl.getColumns(
@@ -120,7 +120,7 @@ def writeBackMentions(betl):
 
         dfl.customSQL(
             sql=sql,
-            dataLayer='TRG',
+            dataLayer='BSE',
             desc='Setting mentions_count on dm_node')
 
         sql = ''
@@ -147,7 +147,7 @@ def writeBackMentions(betl):
 
         dfl.customSQL(
             sql=sql,
-            dataLayer='TRG',
+            dataLayer='BSE',
             desc='Setting number_mentioned_nodes / _people / _companies ' +
                  ' on dm_corruption_doc')
 

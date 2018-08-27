@@ -5,8 +5,8 @@ import betl
 import df_extract_posts
 import df_transform_a_ods as df_transform_ods
 import df_transform_b_mrg as df_transform_mrg
-import df_transform_c_trg_dm as df_transform_dm
-import df_transform_d_trg_ft as df_transform_ft
+import df_transform_c_bse_dm as df_transform_dm
+import df_transform_d_bse_ft as df_transform_ft
 import df_load_search_cols as df_load
 import df_summarise
 
@@ -17,10 +17,10 @@ scheduleConfig = {
     'DEFAULT_SUMMARISE': True,
     'DEFAULT_DM_DATE': True,
     'DEFAULT_DM_AUDIT': True,
-    'SRC_TABLES_TO_EXCLUDE_FROM_DEFAULT_EXT': [
-        'src_wp_documents'
+    'EXT_TABLES_TO_EXCLUDE_FROM_DEFAULT_EXT': [
+        'wp_documents'
     ],
-    'TRG_TABLES_TO_EXCLUDE_FROM_DEFAULT_LOAD': [
+    'BSE_TABLES_TO_EXCLUDE_FROM_DEFAULT_LOAD': [
         'ft_addresses_nodes',
         'ft_network_metrics'
     ],

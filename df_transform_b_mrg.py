@@ -4,7 +4,7 @@ def loadCompaniesToMRG(betl):
         desc='Create a unique list of cleaned company names - we consider ' +
              'two identical names to be the same company')
 
-    dfl.read(tableName='ods_companies', dataLayer='STG')
+    dfl.read(tableName='ods_companies', dataLayer='TRN')
 
     dfl.dropColumns(
         dataset='ods_companies',
@@ -17,7 +17,7 @@ def loadCompaniesToMRG(betl):
     dfl.write(
         dataset='ods_companies',
         targetTableName='mrg_companies',
-        dataLayerID='STG')
+        dataLayerID='TRN')
 
 
 def loadPeopleToMRG(betl):
@@ -26,7 +26,7 @@ def loadPeopleToMRG(betl):
         desc='Create a unique list of cleaned person names - we consider ' +
              'two identical names to be the same person')
 
-    dfl.read(tableName='ods_people', dataLayer='STG')
+    dfl.read(tableName='ods_people', dataLayer='TRN')
 
     dfl.dropColumns(
         dataset='ods_people',
@@ -39,7 +39,7 @@ def loadPeopleToMRG(betl):
     dfl.write(
         dataset='ods_people',
         targetTableName='mrg_people',
-        dataLayerID='STG')
+        dataLayerID='TRN')
 
 
 def loadAddressesToMRG(betl):
@@ -48,7 +48,7 @@ def loadAddressesToMRG(betl):
         desc='Create a unique list of cleaned addresses - we consider ' +
              'two identical addresses to be the same address')
 
-    dfl.read(tableName='ods_addresses', dataLayer='STG')
+    dfl.read(tableName='ods_addresses', dataLayer='TRN')
 
     dfl.dropColumns(
         dataset='ods_addresses',
@@ -61,7 +61,7 @@ def loadAddressesToMRG(betl):
     dfl.write(
         dataset='ods_addresses',
         targetTableName='mrg_addresses',
-        dataLayerID='STG')
+        dataLayerID='TRN')
 
 
 # In theory, there shouldn't be any duplicate links, because this is the
@@ -82,7 +82,7 @@ def loadSrcLinksToMRG(betl):
     dfl = betl.DataFlow(
         desc='Create a unique list of src_links (should already be unique)')
 
-    dfl.read(tableName='ods_src_links', dataLayer='STG')
+    dfl.read(tableName='ods_src_links', dataLayer='TRN')
 
     dfl.dropColumns(
         dataset='ods_src_links',
@@ -95,4 +95,4 @@ def loadSrcLinksToMRG(betl):
     dfl.write(
         dataset='ods_src_links',
         targetTableName='mrg_src_links',
-        dataLayerID='STG')
+        dataLayerID='TRN')
