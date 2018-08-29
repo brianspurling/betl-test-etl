@@ -237,37 +237,25 @@ def prepareFTLinks(betl):
 
     dfl.addColumns(
         dataset='ft_links',
-        columns={
-            'nk_origin_node': setNKCols_originNode,
-            'nk_target_node': setNKCols_targetNode,
-            'nk_commonality_node': setNKCols_commonalityNode},
-        desc='Set the NK nodes')
-
-    dfl.renameColumns(
-        dataset='ft_links',
-        columns={
-            'link_type': 'nk_link_type',
-            'relationship': 'nk_relationship',
-            'start_date': 'nk_start_date',
-            'end_date': 'nk_end_date',
-            },
-        desc='Rename the other NK columns to nk_')
-
-    dfl.dropColumns(
-        dataset='ft_links',
-        colsToDrop=[
-            'origin_node_cleaned',
-            'origin_node_type',
-            'target_node_cleaned',
-            'target_node_type',
-            'commonality_node_cleaned',
-            'commonality_node_type'],
-        desc='Drop unneeded cols')
-
-    dfl.addColumns(
-        dataset='ft_links',
         columns={'dd_duration': calculateDuration},
         desc='Add a duration degenerate dimension')
+
+    dfl.collapseNaturalKeyCols(
+        dataset='ft_links',
+        naturalKeyCols={
+            'nk_origin_node': [
+                'origin_node_type',
+                'origin_node_cleaned'],
+            'nk_target_node': [
+                'target_node_type',
+                'target_node_cleaned'],
+            'nk_commonality_node': [
+                'commonality_node_type',
+                'commonality_node_cleaned'],
+            'nk_link_type': 'link_type',
+            'nk_relationship': 'relationship',
+            'nk_start_date': 'start_date',
+            'nk_end_date': 'end_date'})
 
     dfl.prepForLoad(dataset='ft_links')
 
@@ -288,29 +276,17 @@ def setRelationship(colToClean):
     return cleanCol
 
 
-def setNKCols_originNode(row):
-    return row['origin_node_type'] + '_' + row['origin_node_cleaned']
-
-
-def setNKCols_targetNode(row):
-    return row['target_node_type'] + '_' + row['target_node_cleaned']
-
-
-def setNKCols_commonalityNode(row):
-    return row['commonality_node_type'] + '_' + row['commonality_node_cleaned']
-
-
 def calculateDuration(row):
-    if row['nk_start_date'] is None or row['nk_start_date'] == '':
+    if row['start_date'] is None or row['start_date'] == '':
         duration = 0
     else:
         startDate = \
-            datetime.datetime.strptime(row['nk_start_date'], '%Y%M%d').date()
-        if row['nk_end_date'] is None or row['nk_end_date'] == '':
+            datetime.datetime.strptime(row['start_date'], '%Y%M%d').date()
+        if row['end_date'] is None or row['end_date'] == '':
             endDate = datetime.date.today()
         else:
             endDate = \
-                datetime.datetime.strptime(row['nk_end_date'], '%Y%M%d').date()
+                datetime.datetime.strptime(row['end_date'], '%Y%M%d').date()
         duration = (endDate - startDate).days
     duration_int = int(duration)
 
