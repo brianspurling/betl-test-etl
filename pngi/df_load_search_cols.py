@@ -1,6 +1,6 @@
 def createTextSearchColumns(betl):
 
-    if betl.CONF.EXE.BULK_OR_DELTA == 'BULK':
+    if betl.BULK_OR_DELTA == 'BULK':
 
         sql = ''
         sql += "UPDATE dm_corruption_doc \n"
@@ -14,7 +14,7 @@ def createTextSearchColumns(betl):
 
         dfl.customSQL(
             sql=sql,
-            dataLayer='BSE',
+            databaseID='TRG',
             desc='Setting corruption_doc_tsvector on dm_corruption_doc')
 
         sql = ''
@@ -24,10 +24,10 @@ def createTextSearchColumns(betl):
 
         dfl.customSQL(
             sql=sql,
-            dataLayer='BSE',
+            databaseID='TRG',
             desc='Setting name_tsquery on dm_node')
 
         dfl.close()
 
-    elif betl.CONF.EXE.BULK_OR_DELTA == 'DELTA':
+    elif betl.BULK_OR_DELTA == 'DELTA':
         pass

@@ -15,7 +15,7 @@ def buildSuMentions(betl):
     global DF_SU_MENTIONS
     global DF_CORRUPTION_DOCS
 
-    if betl.CONF.EXE.BULK_OR_DELTA == 'BULK':
+    if betl.BULK_OR_DELTA == 'BULK':
 
         dfl = betl.DataFlow(
             desc='Build su_mentions by searching all docs for all node names')
@@ -100,13 +100,13 @@ def buildSuMentions(betl):
             append_or_replace='append',  # stops it removing SK!
             desc='Writing to summary DB layer')
 
-    elif betl.CONF.EXE.BULK_OR_DELTA == 'DELTA':
+    elif betl.BULK_OR_DELTA == 'DELTA':
         pass
 
 
 def writeBackMentions(betl):
 
-    if betl.CONF.EXE.BULK_OR_DELTA == 'BULK':
+    if betl.BULK_OR_DELTA == 'BULK':
         dfl = betl.DataFlow(
             desc='Write-back the mentions counts to dm_node and ' +
                  'dm_corruption_doc')
@@ -120,7 +120,7 @@ def writeBackMentions(betl):
 
         dfl.customSQL(
             sql=sql,
-            dataLayer='BSE',
+            databaseID='TRG',
             desc='Setting mentions_count on dm_node')
 
         sql = ''
@@ -147,13 +147,13 @@ def writeBackMentions(betl):
 
         dfl.customSQL(
             sql=sql,
-            dataLayer='BSE',
+            databaseID='TRG',
             desc='Setting number_mentioned_nodes / _people / _companies ' +
                  ' on dm_corruption_doc')
 
         dfl.close()
 
-    elif betl.CONF.EXE.BULK_OR_DELTA == 'DELTA':
+    elif betl.BULK_OR_DELTA == 'DELTA':
         pass
 
 

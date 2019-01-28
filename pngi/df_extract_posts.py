@@ -1,6 +1,6 @@
 def extractPosts(betl):
 
-    if betl.CONF.EXE.BULK_OR_DELTA == 'BULK':
+    if betl.BULK_OR_DELTA == 'BULK':
 
         dfl = betl.DataFlow(desc='Extract WordPress posts from source')
 
@@ -20,5 +20,5 @@ def extractPosts(betl):
                   dataLayerID='EXT',
                   desc="Write documents data to EXT data layer")
 
-    elif betl.CONF.EXE.BULK_OR_DELTA == 'DELTA':
+    elif conf.EXE.BULK_OR_DELTA == 'DELTA':
         pass

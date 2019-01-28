@@ -124,7 +124,7 @@ def generateLinks_P2P_where(betl):
 
     dfl.customSQL(
         sql=sql,
-        dataLayer='TRN',
+        databaseID='ETL',
         dataset='tmp_ft_links_generated_P2P_where',
         desc='Generating the P2P_where links')
 
@@ -196,7 +196,7 @@ def generateLinks_P2P_while(betl):
 
     dfl.customSQL(
         sql=sql,
-        dataLayer='TRN',
+        databaseID='ETL',
         dataset='tmp_ft_links_generated_P2P_while',
         desc='Generating the P2P_while links')
 
@@ -240,7 +240,7 @@ def prepareFTLinks(betl):
         columns={'dd_duration': calculateDuration},
         desc='Add a duration degenerate dimension')
 
-    dfl.collapseNaturalKeyCols(
+    dfl.prepForLoad(
         dataset='ft_links',
         naturalKeyCols={
             'nk_origin_node': [
@@ -256,8 +256,6 @@ def prepareFTLinks(betl):
             'nk_relationship': 'relationship',
             'nk_start_date': 'start_date',
             'nk_end_date': 'end_date'})
-
-    dfl.prepForLoad(dataset='ft_links')
 
 
 #####################
